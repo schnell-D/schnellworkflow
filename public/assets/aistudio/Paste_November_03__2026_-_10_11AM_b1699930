@@ -1,0 +1,610 @@
+P Layout - Dasbor Laporan Buku
+Buatkan aplikasi web responsif (mobile-first, tapi tetap rapi di laptop) berbahasa Indonesia untuk laporan pekerjaan layout buku non-fiksi milik seorang freelancer layouter. Tujuannya mengubah laporan di Google Sheets menjadi dasbor yang modern, bersih, dan enak dibaca di HP. Aplikasi ini hanya MEMBACA data (tidak ada edit).
+GAYA VISUAL
+Terang dan bersih seperti dasbor fintech modern: latar abu muda (#F2F5FA), kartu putih bersudut membulat (16px) dengan bayangan halus, warna aksen biru (#2F6BDE), hijau (#1A9E7A) untuk lunas atau selesai, oranye (#F59E0B) untuk menunggu, merah (#E5484D) untuk telat atau bermasalah.
+Font Inter atau Plus Jakarta Sans, angka besar dan tebal, label kecil abu.
+Ikon garis (lucide), animasi halus saat angka dan grafik muncul, ada mode gelap.
+Navigasi menu bawah (bottom tab) dengan 4 tab: Dashboard, Buku, Keuangan, Laporan.
+DATA (tabel, satu baris per buku). Kolomnya:
+No, Judul, Penulis, Kategori, Paket (Basic / Standart / Premium), Status Progres, Tgl Terima, Tgl Selesai Layout, Update Terakhir, Hari Berjalan, Halaman Awal, Halaman Final, Stuck (Ya/Tidak), Nilai Jasa (angka rupiah), Status Bayar (Belum Ditagih / Belum Dibayar / Lunas), Tgl Invoice, Tgl Dibayar, Umur Piutang (hari), Catatan Belum Selesai, Lama Layout Awal (hari).
+Nilai Status Progres: Kirim file awal layout, Di Saya, Di Coped, Di Penulis, Finishing Korektor, Nunggu ACC Cetak, Masalah saat Kor penulis, Selesai.
+Buat satu fungsi tunggal fetchData() yang saat ini mengembalikan 44 baris data contoh yang realistis (judul buku hukum, ekonomi, pendidikan, kesehatan, nilai jasa Rp300 ribu sampai Rp3 juta, tanggal Juli sampai November 2026), supaya nanti mudah saya ganti dengan pemanggilan ke URL JSON milik saya (URL diambil dari satu konstanta di bagian atas file). Jangan menaruh kunci API atau data pribadi di kode.
+TAB 1: DASHBOARD
+Pemilih bulan (panah kiri dan kanan) dan tombol "Semua".
+6 kartu angka berikon dengan persen naik turun dibanding bulan sebelumnya: Buku masuk, Masih aktif, Ditagih (Rp), Dibayar (Rp), Belum ditagih (Rp), Siap ditagih (buku berstatus Selesai yang belum ditagih).
+Grafik batang per minggu: buku masuk vs buku selesai layout.
+Gauge setengah lingkaran "Target bulan ini" (target jumlah buku selesai bisa diatur di pengaturan, bawaan 10) dengan persen capaian.
+Donat komposisi status buku dengan legenda berwarna.
+Kartu ajakan: "N buku selesai belum ditagih, total Rp X" dengan tombol menuju tab Keuangan.
+TAB 2: BUKU
+Kolom cari (judul, penulis, nomor) dan filter chip: Status, Paket, Kategori, Stuck.
+Daftar kartu buku: nomor, judul (maks 2 baris), penulis, label paket, chip status berwarna, nilai jasa, jumlah hari berjalan, penanda merah bila Stuck.
+Ketuk kartu membuka panel dari bawah (bottom sheet) berisi semua detail buku dan garis waktu: Terima, Selesai layout, Invoice, Dibayar.
+TAB 3: KEUANGAN (meniru laporan keuangan profesional)
+Kartu besar: Total nilai jasa. Di bawahnya 3 kartu: Lunas, Belum Dibayar, Belum Ditagih, masing-masing nominal dan persen dari total, dengan bar bertumpuk.
+Tabel per paket: Paket, Jumlah buku, Total halaman, Rata-rata hari pengerjaan, Nilai, % dari total.
+Grafik pembayaran masuk per bulan.
+Daftar piutang (sudah ditagih belum dibayar), diurutkan umur terlama, merah bila lebih dari 30 hari.
+Daftar belum ditagih, diurutkan nilai terbesar.
+Blok "Proyeksi" nilai total bila ada penambahan.
+TAB 4: LAPORAN
+Pratinjau laporan bulanan satu halaman (kop: "RGP Layout, Laporan Bulanan", bulan, ringkasan angka, tabel buku yang selesai bulan itu, total).
+Tombol "Cetak / Simpan PDF" memakai CSS cetak ukuran A4 yang rapi, dan tombol "Salin ringkasan" untuk ditempel ke WhatsApp.
+KETENTUAN TEKNIS
+Komponen dipisah rapi, kode mudah dibaca dan diberi komentar singkat bahasa Indonesia.
+Format angka rupiah Indonesia (Rp1.250.000), tanggal "22 Okt 2026".
+Ada state loading (skeleton), state kosong, dan pesan error yang ramah.
+Semua perhitungan (total, persen, rata-rata, per minggu, per bulan) dilakukan di sisi klien dari data tabel di atas.
+Gemini 3.8 Flash
+Ran for 7m 46s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 17 files
+metadata.json
+check_circle
+index.html
+check_circle
+src/index.css
+check_circle
+src/types.ts
+check_circle
+src/utils/formatters.ts
+check_circle
+src/services/api.ts
+check_circle
+src/utils/analytics.ts
+check_circle
+src/components/Header.tsx
+check_circle
+src/components/BottomNav.tsx
+check_circle
+src/components/DashboardCharts.tsx
+check_circle
+src/components/DashboardTab.tsx
+check_circle
+src/components/BookDetailSheet.tsx
+check_circle
+src/components/BukuTab.tsx
+check_circle
+src/components/KeuanganTab.tsx
+check_circle
+src/components/LaporanTab.tsx
+check_circle
+src/components/SettingsModal.tsx
+check_circle
+src/App.tsx
+check_circle
+build
+Built
+Aplikasi web responsif RGP Layout untuk laporan pekerjaan layout buku non-fiksi telah selesai dibangun dengan gaya visual dasbor fintech modern.
+Ringkasan Fitur & Implementasi:
+Gaya Visual & Tata Letak:
+Palet Fintech Modern: Latar belakang abu muda (#F2F5FA), kartu putih membulat (rounded-2xl / 16px) dengan bayangan halus, warna aksen biru (#2F6BDE), hijau (#1A9E7A) untuk lunas/selesai, oranye (#F59E0B) untuk menunggu, dan merah (#E5484D) untuk kendala/stuck.
+Tipografi & Ikon: Font Plus Jakarta Sans dengan format tabular numbers pada nominal uang & hari, dipadukan dengan ikon garis Lucide.
+Mode Gelap (Dark Mode): Tersedia tombol sakelar tema terang/gelap di bar atas dengan penyimpanan preferensi otomatis.
+Navigasi Tab Bawah (Mobile-First): Dilengkapi bilah menu bawah yang ramah sentuhan (min. 44px) serta sinkron dengan navigasi atas di layar laptop.
+Struktur Data & Fungsi fetchData():
+Fungsi tunggal fetchData() berada di src/services/api.ts dengan konstanta JSON_DATA_URL di bagian atas file.
+Menyediakan 44 baris data contoh realistis buku non-fiksi (Hukum, Ekonomi, Pendidikan, Kesehatan, Sosial & Humaniora, Bisnis) dengan rentang waktu Juli hingga November 2026 dan nilai jasa Rp300.000 s/d Rp3.000.000.
+Bila JSON_DATA_URL diisi URL JSON milik Anda (misal Web App Google Apps Script atau Gist), aplikasi otomatis mengambil data tersebut dengan mekanisme fallback bila offline.
+Tab 1: Dashboard:
+Pemilih Bulan: Navigasi panah kiri/kanan per bulan dan tombol "Semua".
+6 Kartu Metrik: Menampilkan Buku Masuk, Masih Aktif, Ditagih (Rp), Dibayar (Rp), Belum Ditagih (Rp), dan Siap Ditagih, lengkap dengan persentase perubahan vs bulan sebelumnya.
+Gauge Setengah Lingkaran: Capaian target buku selesai per bulan (bawaan: 10 buku, target dapat disesuaikan di modal pengaturan).
+Grafik Batang Mingguan: Perbandingan Buku Masuk vs Selesai Layout per minggu.
+Donut Chart: Distribusi status progres pengerjaan buku dengan legenda berwarna yang dapat diklik langsung untuk memfilter daftar buku.
+Kartu Ajakan: Notifikasi bila ada buku selesai yang siap diterbitkan invoice beserta tombol pintas ke tab Keuangan.
+Tab 2: Buku:
+Pencarian cerdas (judul, penulis, atau nomor #).
+Filter cepat (Status Progres, Paket Basic/Standart/Premium, Kategori, serta filter Stuck).
+Kartu buku menampilkan nomor, judul (maks 2 baris), penulis, label paket, status pengerjaan, nilai jasa, hari berjalan, serta penanda merah bila ada kendala (Stuck).
+Bottom Sheet Detail: Menampilkan rincian halaman (awal vs final), catatan kendala, dan garis waktu proyek (Terima 
+ Selesai 
+ Invoice 
+ Dibayar).
+Tab 3: Keuangan:
+Kartu besar Total Nilai Jasa, diiringi 3 kartu (Lunas, Belum Dibayar, Belum Ditagih) dengan persentase dan bilah bertumpuk (stacked progress bar).
+Tabel analisis per paket (Jumlah buku, total halaman, rata-rata hari pengerjaan, nilai jasa, dan persentase).
+Grafik arus kas pembayaran masuk per bulan (Juli–November 2026).
+Daftar piutang diurutkan dari umur terlama dengan tanda merah bila 
+ hari (jatuh tempo).
+Daftar pekerjaan belum ditagih diurutkan dari nilai jasa terbesar.
+Blok simulasi proyeksi pendapatan bila ada penambahan pekerjaan layout baru.
+Tab 4: Laporan:
+Pratinjau laporan bulanan satu halaman bergaya resmi (Kop: RGP Layout, ringkasan angka, tabel buku selesai, dan pengesahan).
+Tombol "Cetak / Simpan PDF" dengan CSS cetak A4 yang rapi tanpa elemen navigasi aplikasi.
+Tombol "Salin Ringkasan" yang memformat laporan rapi siap kirim ke WhatsApp.
+flag
+Checkpoint
+I made some changes.
+summarize_auto
+Manual edit
+edit
+Edited 1 file
+index.html
+check_circle
+flag
+Checkpoint
+ganti teksnya jadi Schnell. (Layout)
+Workflow Book Management
+image.png
+image.png
+Gemini 3.8 Flash
+Ran for 2m 41s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 4 files
+src/components/Header.tsx
+check_circle
+index.html
+check_circle
+src/components/LaporanTab.tsx
+check_circle
+src/services/api.ts
+check_circle
+build
+Built
+Teks pada header dan seluruh bagian aplikasi telah diperbarui sesuai permintaan:
+Judul Utama Brand: Schnell. (Layout)
+Subjudul / Deskripsi: Workflow Book Management
+Sinkronisasi Dokumen & Laporan: Kop surat laporan cetak, template pesan WhatsApp, serta judul halaman di index.html juga telah diselaraskan dengan identitas baru Schnell. (Layout) - Workflow Book Management.
+flag
+Checkpoint
+buatkan 1 menu lagi untuk output PDF Invoice buku yang akan di tagih tampilannya mirip seperli halaman laporan sekarang----- dan halaman sekarang di ganti format jadi data riwayat invoce saja (list buku muncul jika buku sudah selesai.
+Apa jelas?
+Gemini 3.8 Flash
+Ran for 3m 41s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 9 files
+src/types.ts
+check_circle
+src/utils/formatters.ts
+check_circle
+src/components/InvoiceTab.tsx
+check_circle
+src/components/RiwayatInvoiceTab.tsx
+check_circle
+src/components/Header.tsx
+check_circle
+src/components/BottomNav.tsx
+check_circle
+src/components/BookDetailSheet.tsx
+check_circle
+src/components/DashboardTab.tsx
+check_circle
+src/App.tsx
+check_circle
+build
+Built
+Sangat jelas! Pembaruan menu dan format telah selesai diimplementasikan sesuai instruksi Anda:
+1. Menu Baru: Invoice PDF (Faktur Tagihan Buku yang Akan Ditagih)
+Tampilan Resmi Mirip Halaman Laporan: Menggunakan kop resmi Schnell. (Layout) dan Workflow Book Management berstandar pracetak A4.
+Pemilih Buku yang Fleksibel: Anda dapat memilih 1 buku atau beberapa buku selesai sekaligus untuk tagihan kolektif (misal untuk penerbit atau penulis yang sama).
+Rincian Tagihan Lengkap:
+Nomor Invoice otomatis (format konsisten: INV/SCH/2026/11/xxx).
+Tanggal invoice dan estimasi tanggal jatuh tempo (default: 14 hari kalender).
+Nama klien / penerbit tujuan.
+Tabel rincian pekerjaan: judul buku, paket layout, jumlah halaman final, dan nominal jasa.
+Total tagihan tebal dan dilengkapi format kalimat Terbilang Indonesia (misal: # Dua Juta Empat Ratus Lima Puluh Ribu Rupiah #).
+Rincian instruksi transfer Bank (Bank BCA, no. rekening, dan atas nama layouter).
+Tanda tangan dan stempel resmi digital.
+Tombol Aksi:
+"Cetak / Simpan PDF Invoice": Menggunakan CSS cetak A4 yang bersih tanpa elemen antarmuka aplikasi.
+"Salin Tagihan WA": Menghasilkan pesan teks WhatsApp lengkap siap kirim ke klien.
+2. Format Menu: Riwayat Invoice (Khusus Buku yang Sudah Selesai)
+Hanya Memunculkan Buku yang Sudah Selesai: Sesuai ketentuan, daftar buku di menu ini disaring ketat hanya untuk pekerjaan yang berstatus Selesai.
+Data Log & Riwayat Pembayaran:
+Menampilkan nomor invoice resmi, judul buku, penulis, paket, tanggal selesai layout, tanggal penerbitan invoice, tanggal dibayar, nilai jasa, dan status bayar (Lunas, Belum Dibayar/Piutang, atau Belum Ditagih).
+Penanda merah khusus bila umur piutang melewati 30 hari kalender.
+Pintasan Cepat: Di setiap baris tabel terdapat tombol "Cetak Invoice" yang langsung membuka faktur tagihan buku tersebut di menu Invoice.
+Filter & Pencarian: Dapat memfilter berdasarkan periode bulan, status pelunasan, serta pencarian judul/penulis/no invoice.
+Ringkasan & Ekspor: Tersedia 4 kartu metrik (Buku Selesai, Total Nilai Jasa, Lunas, dan Piutang) serta tombol Cetak Rekap A4 dan Salin Rekap WA.
+3. Struktur Navigasi (5 Menu):
+Dashboard (KPI, grafik batang mingguan, target gauge, komposisi progres, dan tombol ajakan buat invoice).
+Buku (Daftar seluruh pekerjaan layout buku yang sedang berjalan, filter status, paket, dan penanda Stuck).
+Keuangan (Arus kas bulanan, breakdown lunas vs piutang, analisis per paket, dan simulasi proyeksi omzet).
+Invoice (Generator & output cetak PDF faktur tagihan buku yang akan ditagih).
+Riwayat (Arsip data riwayat invoice dan status pelunasan khusus buku-buku yang telah selesai).
+flag
+Checkpoint
+dalam menu "Invoice PDF" - ganti nama jadi "Invoice"
+dalamnya yang perlu di ubah
+Nomor Invoice:
+Tanggal Invoice:
+Jatuh Tempo:
+Ditagihkan Kepada (Klien):
+taruh di atas list buku
+2. list buku munculkan yang sudah siap tagih saja (status buku selesai. (buat lebih simpel)
+3. buatkan note tambahan keterangan perbuku jika ada tambahan tagihan (misal, ongkir kirim revisi fisik/tambahan slot revisi etc. (buat list tambahan untuk menambahkan nominal harganya)
+4. tampilan preview invoce
+Kopsurat Logo S tanpa titik. Nama SCHNELL. (LAYOUT) ganti dengan "Schnell." saja. (mungkin buat opsi bisa di ganti di poin 1)
+sub Layanan Desain & Tata Letak Buku
+sub "Spesialis Layout InDesign & Format Standar Pracetak Penerbit" Hapus
+|DITAGIHKAN KEPADA:
+(sudah benar tambahkan alamat kantor yang bisa di edit di poin 1)
+5. Tabel
+tambahkan Task (isinya bisa di gati di poin atas (pilihannya layout/ desain)
+No. - Task - Tgl Selesai - Judul buku dan penulis (sama seperti versi ini cuman hapus keterangan (iselesaikan: 20 Jul 2026) - Paket di list bukunya Langsung Premium/standart/basic Tanpa kata "Paket" lagi - Hlm. Final (sudah benar) - Nilai Jasa (sudah benar)
+6. INSTRUKSI PEMBAYARAN: (ganti dengan keterangan ini dan ganti teksnya "Informasi Pembayaran:")
+Bank Transfer: BCA 604 - 203 - 5544
+Atas Nama: Achmad Fazri Ramadhani
+teks kecil di bawahnya di hapus saja .
+7. Hormat kami, (hapus saja)
+jadi poin 1 hasilnya
+Nomor Invoice:
+Tanggal Invoice:
+Jatuh Tempo: (list pilihan 7 hari / 14 hari / 30 hari)
+Ditagihkan Kepada (Klien):
+Alamat Klient:
+Gemini 3.8 Flash
+Ran for 2m 47s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 3 files
+src/components/Header.tsx
+check_circle
+src/components/InvoiceTab.tsx
+check_circle
+src/components/RiwayatInvoiceTab.tsx
+check_circle
+build
+Built
+Semua poin perubahan untuk menu Invoice dan format pratinjaunya telah selesai diperbarui sesuai instruksi Anda:
+1. Nama Menu:
+Menu di bilah navigasi atas (laptop) dan tab bawah (HP) telah diubah menjadi "Invoice" (sebelumnya Invoice PDF).
+2. Form Input Diletakkan di Atas List Buku:
+Form data tagihan sekarang berada persis di bagian atas sebelum pemilihan buku:
+Nomor Invoice: Input nomor faktur (otomatis terisi format INV/SCH/2026/11/xxx dan dapat diedit).
+Tanggal Invoice: Pemilih tanggal invoice.
+Jatuh Tempo: Pilihan dropdown: 7 Hari Kalender, 14 Hari Kalender (Bawaan), atau 30 Hari Kalender.
+Ditagihkan Kepada (Klien): Input nama klien / penulis / penerbit.
+Alamat Klien: Input alamat kantor / alamat instansi klien untuk dicetak pada invoice.
+Opsi Nama di Kop: Dapat diubah langsung (bawaan: "Schnell.").
+Pilihan Task Bawaan: Pilihan cepat task bawaan (Layout atau Desain).
+3. List Buku Dibuat Lebih Simpel & Hanya Buku Selesai:
+Hanya memunculkan buku-buku yang sudah berstatus "Selesai" (siap ditagih).
+Desain kartu seleksi dibuat lebih simpel dan ringkas dengan checkbox, nomor, judul, paket, halaman final, tarif, serta dropdown task (Layout / Desain) per buku.
+4. Note / Keterangan Biaya Tambahan per Tagihan:
+Disediakan fitur "Catatan Tambahan & Biaya Ekstra" dengan tombol + Tambah Biaya Ekstra.
+Anda dapat menambahkan item seperti: ongkir kirim revisi fisik (dummy buku), tambahan slot revisi, dll. beserta nominal rupiahnya.
+Nominal ini otomatis masuk ke subtotal dan total tagihan invoice serta terbilang.
+5. Tampilan Preview Dokumen Invoice A4:
+Kop Surat:
+Logo kotak biru dengan huruf S (tanpa titik).
+Nama Brand: Schnell. (tanpa embel-embel (LAYOUT)).
+Subjudul: "Layanan Desain & Tata Letak Buku".
+Teks "Spesialis Layout InDesign..." telah dihapus.
+Bagian Ditagihkan Kepada:
+Nama Klien
+Alamat Kantor Klien (dari form input poin 2).
+Jatuh Tempo dengan durasi hari kalender yang dipilih.
+6. Tabel Rincian Invoice:
+Kolom tabel telah disesuaikan tepat sesuai urutan:
+No.
+Task (menampilkan Layout atau Desain sesuai pilihan).
+Tgl Selesai (misal: 20 Jul 2026).
+Judul Buku dan Penulis (keterangan "Diselesaikan: ..." telah dihapus).
+Paket (langsung menampilkan Premium / Standart / Basic tanpa kata "Paket").
+Hlm. Final (misal: 284 hal).
+Nilai Jasa (nominal rupiah).
+Baris biaya tambahan (ongkir/revisi) ditampilkan rapi di bawah baris buku jika diisi.
+7. Informasi Pembayaran & Penutup:
+Judul diganti menjadi "Informasi Pembayaran:".
+Rincian transfer:
+Bank Transfer: BCA 604 - 203 - 5544
+Atas Nama: Achmad Fazri Ramadhani
+Teks kecil di bawahnya telah dihapus.
+Teks "Hormat kami," telah dihapus. Bagian tanda tangan langsung menampilkan nama Schnell. dan Workflow Book Management.
+Format teks salin ke WhatsApp juga telah disesuaikan dengan data rekening dan format invoice terbaru.
+flag
+Checkpoint
+Schnell.
+Schnell.
+Workflow Book Management (teks ini hapus saja)
+Tambahan biaya masukan perbuku (bukan baris baru di bawah) tapi di bawah judul bukunya
+jadi misal 2 buku yang punya Tambahan biaya terlihat jelas buku yang mana
+Gemini 3.8 Flash
+Canceled
+error
+The task was canceled.
+Schnell.
+Schnell.
+Workflow Book Management (teks ini hapus saja)
+Tambahan biaya masukan perbuku (bukan baris baru di bawah) tapi di bawah judul bukunya
+jadi misal 2 buku yang punya Tambahan biaya terlihat jelas buku yang mana
+Gemini 3.8 Flash
+Ran for 2m 35s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 1 file
+src/components/InvoiceTab.tsx
+check_circle
+build
+Built
+Perubahan telah selesai diterapkan:
+1. Perbaikan Blok Tanda Tangan:
+Duplikasi nama teks Schnell. dan teks Workflow Book Management di bagian bawah tanda tangan telah dihapus.
+Sekarang hanya menyisakan satu tampilan nama Schnell. yang bersih dan elegan di sisi kanan bawah.
+2. Tambahan Biaya Melekat Per-Buku (Tepat di Bawah Judul Bukunya):
+Input Per-Buku: Pada daftar buku yang dipilih, kini terdapat tombol "+ Tambah Biaya Ekstra Buku Ini". Anda dapat menambahkan keterangan (misal: Ongkir kirim revisi fisik dummy, Tambahan slot revisi, dll.) dan nominalnya langsung khusus untuk buku yang bersangkutan.
+Tampilan di Tabel Invoice:
+Biaya tambahan tidak lagi menjadi baris terpisah di bawah tabel, melainkan muncul langsung di kolom judul buku yang bersangkutan, tepat di bawah nama buku dan penulisnya.
+Jika Anda menagih 2 buku atau lebih sekaligus, akan terlihat sangat jelas dan transparan buku mana yang memiliki biaya tambahan dan berapa rincian nominalnya.
+Kolom Nilai Jasa pada baris buku tersebut otomatis menjumlahkan nilai jasa + biaya tambahannya, disertai rincian tarif dasar di bawahnya.
+Subtotal jasa murni, total biaya tambahan, dan total keseluruhan tagihan tetap terhitung presisi beserta kalimat terbilangnya.
+flag
+Checkpoint
+Pilih Buku & Tambahan Biaya Per Buku
+tambahkan untuk pencarian dan filter (dan area scroll nya yang nampilin bukunya di pendekin agar tidak terlihat menumpuk.
+Gemini 3.8 Flash
+Ran for 4m 23s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 4 files
+src/components/InvoiceTab.tsx
+check_circle
+src/components/Header.tsx
+check_circle
+src/components/RiwayatInvoiceTab.tsx
+check_circle
+index.html
+check_circle
+build
+Built
+Teks dan identitas visual telah disesuaikan dengan rapi sesuai permintaan:
+Header Aplikasi:
+Logo menggunakan inisial S dalam kotak biru membulat yang konsisten dengan logo kop surat faktur.
+Nama merek diperbarui menjadi Schnell. dengan label (Layout).
+Teks "Workflow Book Management" telah dihapus dari header, dokumen cetak riwayat, dan format salin WhatsApp.
+Rincian Biaya Tambahan Per Buku di Invoice:
+Biaya ekstra (seperti ongkir revisi fisik atau slot revisi tambahan) terpasang langsung di bawah judul masing-masing buku, sehingga jelas buku mana yang memiliki biaya tambahan ketika menagih lebih dari satu buku.
+Area pemilihan buku selesai di Invoice Tab dilengkapi fitur pencarian, filter (Semua, Siap Tagih, Terpilih), dan area gulir yang ringkas (max-h-60).
+Informasi rekening tetap ringkas: BCA 604 - 203 - 5544 a.n. Achmad Fazri Ramadhani.
+Tanda tangan kop faktur bersih dengan satu nama Schnell..
+flag
+Checkpoint
+ini di buat manjang dari baris task sampai hlm. Final (teksnya kecil saja
+teks colom "Hlm. Final" ganti "Halaman" -- 238 hal ganti 238 hlm.
+Bank Transfer: BCA 604 - 203 - 5544 (bagian ini bisa di highlight nomornya
+image.png
+image.png
+Gemini 3.8 Flash
+Ran for 4m 38s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 5 files
+src/components/InvoiceTab.tsx
+check_circle
+src/components/RiwayatInvoiceTab.tsx
+check_circle
+src/components/BookDetailSheet.tsx
+check_circle
+src/components/BukuTab.tsx
+check_circle
+src/components/KeuanganTab.tsx
+check_circle
+build
+Built
+Perubahan telah diterapkan sesuai permintaan:
+Biaya Tambahan Dibuat Memanjang (Task s/d Halaman):
+Catatan & biaya tambahan kini tidak lagi berdesakan di dalam sel judul buku. Biaya tambahan ditampilkan sebagai baris tersendiri yang membentang lebar dari kolom Task hingga kolom Halaman (colSpan={5}) dengan ukuran teks kecil (text-[10px]) dan label + Tambahan Biaya.
+Nominal biaya tambahan (misal +Rp10.000) lurus sejajar di kolom kanan di bawah Nilai Jasa.
+Perubahan Judul Kolom & Format Halaman:
+Judul kolom "Hlm. Final" diubah menjadi "Halaman".
+Format halaman diubah dari hal menjadi hlm. (contoh: 238 hlm.), baik di pratinjau faktur, kartu buku, maupun format salin WhatsApp.
+Highlight Nomor Rekening Pembayaran:
+Nomor rekening 604 - 203 - 5544 kini diberi highlight kuning/amber yang jelas dan kontras tinggi seperti stabilo pada dokumen fisik, serta dilengkapi tombol Salin Rek untuk menyalin nomor dengan satu klik.
+flag
+Checkpoint
+Subtotal Jasa Layout Murni: Rp1.600.000
+Total Biaya Tambahan Per Buku: +Rp10.000
+ini tidak perlu ada
+Salin reknya tidak perlu (karena ini akan di cetak)
+Gemini 3.8 Flash
+Ran for 49s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 1 file
+src/components/InvoiceTab.tsx
+check_circle
+build
+Built
+Perubahan telah diterapkan:
+Menghapus Baris Subtotal Jasa & Biaya Tambahan:
+Baris "Subtotal Jasa Layout Murni" dan "Total Biaya Tambahan Per Buku" pada bagian bawah tabel invoice telah dihilangkan. Bagian bawah tabel kini langsung menampilkan baris TOTAL JUMLAH TAGIHAN yang bersih dan ringkas.
+Menghapus Tombol Salin Rekening:
+Tombol "Salin Rek" telah dihilangkan sepenuhnya karena dokumen ditujukan untuk cetak / PDF. Nomor rekening 604 - 203 - 5544 tetap tampil dengan highlight stabilo yang jelas dan kontras tinggi.
+flag
+Checkpoint
+Masuk ke bagian Buku
+Pencarian (sudah ok
+Tampilan list Card buku (ok)
+dalam cardNILAI JASA - (tidak perlu munculkan di sini)
+Saat card di klik
+a. info masi buku (sudah ok)
+b. Status Progers (ok)
+c. Status Pembayaran (ganti dengan lama waktu Status Progres. contoh Status Progres: penulis muncul berapa hari di penulis (realtime) Format Hari saja)
+d. Garis Waktu Proyek
+alurnya, bisa berubah tapi yang pasti (Terima naskah - kirim layout awal - Penulis - koreksi - finishing - acc cetak - Invoce - Paid (dibayar) note. kadang - Penulis - koreksi kebalik atau ada tambahan cetak dummy dulu.
+e. NILAI JASA (hapus)
+f. HALAMAN
+tambakan untuk menginput update total halamannya
+g. HARI BERJALAN (sudah ok)
+h. UMUR PIUTANG (hapus)
+i. Catatan Pengerjaan
+buatkan untuk input di atasnya dan di bawahnya riwayat catatan (jadi tract record revisi buku bisa terlihat/bukti)
+j. tombol Buat / Cetak Invoice (hapus)
+Gemini 3.8 Flash
+Ran for 5m 19s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 4 files
+src/types.ts
+check_circle
+src/components/BukuTab.tsx
+check_circle
+src/App.tsx
+check_circle
+src/components/BookDetailSheet.tsx
+check_circle
+build
+Built
+Semua penyesuaian untuk bagian Buku (poin 1–3 j) telah selesai diimplementasikan:
+Ringkasan Perubahan:
+Card Buku di Tab Buku (BukuTab.tsx):
+Nilai Jasa dihapus dari kartu preview buku.
+Bagian bawah kartu kini menampilkan Halaman ({total} hlm.) di sisi kiri dan Hari Berjalan ({hari} hari) di sisi kanan secara rapi dan simetris.
+Pilihan pengurutan disesuaikan menjadi No (#1-#44), Halaman Terbanyak, Hari Berjalan Terlama, dan Update Terbaru.
+Panel Detail Buku Saat Kartu Diklik (BookDetailSheet.tsx):
+a. Informasi Buku: Tetap lengkap menampilkan nomor #No, badge paket (Basic/Standart/Premium), kategori, badge stuck jika ada, judul buku, dan nama penulis.
+b. Status Progres: Tetap aktif dengan warna indikator dinamis.
+c. Pengganti Status Pembayaran: Diganti dengan Lama di Status Ini dalam Format Hari saja (misal: 5 Hari), terhitung secara realtime sejak tanggal update status buku (misal: Di Penulis).
+d. Garis Waktu Proyek: Alur diperbarui sesuai alur kerja nyata:
+
+Dilengkapi tombol interaktif untuk menandai status cetak dummy fisik pracetak (Off / Proses / ACC).
+e. Nilai Jasa: Dihapus sepenuhnya dari rincian panel.
+f. Halaman & Input Update: Tersedia fitur "Ubah Halaman" dengan input angka dan tombol stepper [-] [+] untuk memperbarui jumlah halaman final buku. Data tersimpan permanen dan otomatis menghitung selisih penambahan halaman (+X hlm.).
+g. Hari Berjalan: Tetap ada dengan informasi hari layout awal dan tanggal terima.
+h. Umur Piutang: Dihapus sepenuhnya dari panel.
+i. Catatan Pengerjaan & Track Record Revisi:
+Form input di bagian atas lengkap dengan pilihan tag (Revisi Penulis, Korektor/Coped, Finishing, Cetak Dummy, ACC Cetak, Kendala, Catatan Umum) dan tombol "Tambah Catatan".
+Riwayat catatan di bawahnya disusun secara kronologis dengan stempel waktu, tag berwarna, dan tombol hapus, tersimpan secara persisten per buku untuk bukti revisi.
+j. Tombol Buat / Cetak Invoice: Dihapus dari panel detail, menyisakan tombol "Tutup".
+flag
+Checkpoint
+Tambahkan fitur untuk tambah buku baru
+data yang di masukan
+Judul buku - nama penulis - Ukuran buku - Halaman Warna (bw/half bw/full color) - Estimasi Halaman
+di dalam card
+a. Garis Waktu Proyek
+tambahkan tombol untuk mengupdate Status Progres (di saya, di penulis, finishing korektor, etc.)
+b. tambahkan untuk masukan ISBN dan Kode Produksi. dan tambahan status (ISBN Terbit / Belum ada ISBN / Pengajuan ISBn)
+Gemini 3.8 Flash
+Ran for 6m 27s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+edit
+Edited 5 files
+src/types.ts
+check_circle
+src/components/AddBookModal.tsx
+check_circle
+src/App.tsx
+check_circle
+src/components/BookDetailSheet.tsx
+check_circle
+src/components/BukuTab.tsx
+check_circle
+build
+Built
+Semua fitur baru yang diminta telah selesai diimplementasikan:
+1. Fitur Tambah Buku Baru
+Tombol + Tambah Buku: Ditambahkan di bilah atas pada Tab Buku (bersebelahan dengan kolom pencarian dan filter).
+Form Pendaftaran Proyek Buku Baru (AddBookModal.tsx):
+Judul Buku: Input teks judul naskah.
+Nama Penulis: Input teks nama penulis / penyusun lengkap dengan gelar.
+Ukuran Buku: Pilihan ukuran standar pracetak (UNESCO 15,5 x 23 cm, A5 14,8 x 21 cm, B5 17,6 x 25 cm, Novel 13 x 19 cm, A4, dan opsi Custom).
+Halaman Warna: Pilihan 3 mode cetak: BW, Half BW, atau Full Color.
+Estimasi Halaman: Input angka estimasi total halaman (satuan hlm.).
+Identitas Awal & Metadata: Paket, Kategori, Kode Produksi (otomatis terformat misalnya PRD-2026-045), nomor ISBN, dan Status ISBN.
+Penyimpanan Persisten: Data buku baru tersimpan ke local state dan localStorage, sehingga tidak akan hilang saat refresh dan langsung muncul di daftar buku teratas serta langsung membuka panel detailnya.
+2. Peningkatan di Dalam Detail Buku (BookDetailSheet.tsx & Card Buku)
+a. Update Status Progres di Garis Waktu Proyek:
+Di dalam panel Garis Waktu Proyek, kini terdapat kontrol Update Status Progres (dropdown dan tombol cepat / quick pills):
+Di Saya
+Di Penulis
+Di Coped
+Finishing Korektor
+Nunggu ACC Cetak
+Masalah saat Kor penulis
+Kirim file awal layout
+Selesai
+Begitu status diubah, stempel tanggal pembaruan (Update Terakhir) otomatis diset ke hari ini, durasi "Lama di Status Ini" terhitung ulang realtime, dan garis waktu proyek langsung menyala pada tahapan yang sesuai.
+b. Masukan ISBN, Kode Produksi & Status ISBN:
+Ditambahkan panel khusus "Identitas Produksi & ISBN":
+Kode Produksi: Input & tampilan kode produksi buku.
+Nomor ISBN: Input & tampilan nomor ISBN resmi.
+Status ISBN: Opsi pemilihan langsung:
+ISBN Terbit (badge hijau emerald)
+Pengajuan ISBN (badge oranye amber)
+Belum ada ISBN (badge netral)
+Spesifikasi Buku: Menampilkan ukuran buku dan mode halaman warna (BW / Half BW / Full Color).
+Tampilan di Card Buku (BukuTab.tsx): Daftar kartu buku kini menampilkan badge kecil untuk Kode Produksi, status ISBN, serta ukuran dan mode warna buku.
+flag
+Checkpoint
+Update Status Progres Proyek:
+tambahkan list (Kirim file awal layout
+Di Saya
+Di Coped
+Finishing Saya
+Di Penulis
+Finishing Korektor
+Nunggu ISBN
+Nunggu ACC Cetak
+Sudah siap cetak
+Selesai
+Masalah saat Kor penulis)
+paket bisa di ubah di dalam card
+Tambahakan catatn keterangan kelengkapan naskah. listnya (
+Prakata
+Kata Sambutan
+Prolog
+Epilog
+Isi Naskah
+Daftar Pustaka
+Biodata Penulis
+Foto Penulis
+Sinopsis
+Indeks
+Lengkap)
+Tombol tutup tambahkan fitur save & tutup (jadi jika ada perubahan tapi tidak klik tomol itu tidak di simpan perubahannya - keamanan jika salah input)

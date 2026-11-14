@@ -1,0 +1,300 @@
+PROMPT LENGKAP SCHNELL (dasborlaporan.vercel.app)
+Disusun 14 November 2026
+
+CARA PAKAI
+1. Tempel TAHAP 0 lebih dulu. Isinya aturan umum dan daftar master (konfigurasi) yang dipakai semua tahap.
+2. Lanjutkan dengan tahap lain SATU PER SATU, urut dari Tahap 1. Periksa hasilnya sampai tidak ada error sebelum lanjut. Prompt yang terlalu panjang sering hanya dikerjakan sebagian, jadi jangan menempel semuanya sekaligus.
+3. Di awal setiap tahap tambahkan kalimat: "Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0."
+4. Lampirkan screenshot tampilan saat ini bila ada (terutama untuk Tahap 2, 3, dan 5).
+5. Tempel hanya teks di antara garis pemisah, mulai dari judul TAHAP sampai sebelum judul TAHAP berikutnya.
+
+
+=====================================================================
+TAHAP 0: ATURAN UMUM & KONFIGURASI (tempel lebih dulu)
+=====================================================================
+Kamu mengerjakan pembaruan besar pada aplikasi Schnell (sistem manajemen proyek layout buku dan faktur) secara bertahap. Pembaruan dikirim per TAHAP; kerjakan hanya tahap yang sedang dikirim.
+
+ATURAN UMUM
+- Pertahankan gaya visual yang ada (font, warna biru/hijau, mode gelap/terang, bentuk kartu), tetapi buat lebih modern, ringkas, dan efisien. Jangan menghapus fitur yang sudah ada kecuali disebut.
+- Hanya ubah bagian yang disebut pada tahap itu. Jangan mengubah nama field, rumus perhitungan, atau data yang ada kecuali disebut.
+- Semua tampilan wajib nyaman di HP: tidak ada scroll horizontal pada halaman (kecuali yang memang disebut), target sentuh minimal 44x44px, font input minimal 16px, type="date" untuk tanggal, inputMode="numeric" untuk angka, tinggi layar memakai 100dvh dengan padding safe-area. Uji di lebar 360, 390, 768, dan 1280px.
+- Semua operasi Firestore dibungkus try/catch dengan pesan error yang jelas; gunakan update optimistik dengan rollback bila gagal. Jangan menyimpan token atau data pribadi di localStorage. Jangan membuat lebih dari satu listener untuk koleksi yang sama.
+- Dukung mode gelap, skeleton saat loading, transisi maksimal 150ms (hormati prefers-reduced-motion). Teks antarmuka berbahasa Indonesia.
+- Setelah selesai setiap tahap: pastikan build tanpa error, tidak ada console error, dan sebutkan file yang diubah.
+
+KONFIGURASI
+Buat SATU file konfigurasi (misalnya src/config/masterData) dan pakai di seluruh aplikasi. Jangan menulis ulang daftar di bawah ini di tempat lain.
+
+1. PAKET: Basic (2500), Standart (4000), Premium (5000). Simpan angkanya sebagai "tarif" referensi; JANGAN dipakai menghitung Nilai Jasa secara otomatis.
+
+2. UKURAN_BUKU: "15x23", "15,5x23,5", "14x21", "B5", "A5", "A4", dan satu pilihan "Custom" (pengguna mengetik ukuran sendiri). Nilai ukuran lama yang tidak ada di daftar (misalnya "UNESCO (15,5 x 23 cm)") tetap ditampilkan apa adanya dan diperlakukan sebagai Custom; jangan dihapus atau diubah.
+
+3. STATUS (urut alur kerja): Kirim file awal layout, Di Saya, Di Coped, Finishing Saya, Di Penulis, Finishing Korektor, Nunggu ISBN, Nunggu ACC Cetak, Sudah siap cetak, Selesai, Masalah saat Kor penulis.
+
+4. STATUS_KATEGORI (pengelompokan untuk filter dan grafik):
+   - Tahap Awal: Kirim file awal layout
+   - Progres: Di Saya, Di Coped, Finishing Saya, Di Penulis, Finishing Korektor, Nunggu ISBN, Nunggu ACC Cetak (dan status apa pun yang diawali "Nunggu")
+   - Masalah: Masalah saat Kor penulis, Kendala Penulis
+   - Finish: Sudah siap cetak, Selesai
+   Status yang tidak ada di daftar otomatis masuk "Progres". Warna kelompok: Tahap Awal biru muda, Progres kuning/amber, Masalah merah, Finish hijau. Pengguna dapat memindahkan status ke kelompok lain di halaman Akun > "Kelompok status" (tersimpan di pengaturan akun dan menimpa bawaan).
+
+5. STATUS_DI_SAYA: "Di Saya", "Finishing Saya". STATUS_SELESAI: "Selesai". BATAS_HARI_TERLAMBAT: 3. Ketiganya dapat diubah di halaman Akun dan tersimpan di pengaturan akun.
+
+6. KATEGORI_BUKU (25 pilihan): Ilmu Sosial, Olah Raga, Administrasi, Agama, Antropologi & Kebudayaan, Arsitektur, Bahasa & Sastra, Ekonomi Islam, Ekonomi/Manajemen, Ensiklopedia & Kamus, Filsafat, Hukum, Kesehatan/Kedokteran, Komunikasi, Metodologi, Pariwisata, Pendidikan, Perpajakan, Pertanian, Psikologi, Sosiologi dan Politik, Statistik, Teknik dan Ekologi, Teknologi Informasi, Transportasi. Nilai kategori lama di luar daftar (misalnya "Kesehatan") tetap ditampilkan apa adanya.
+
+7. KELENGKAPAN_NASKAH (10 bagian): Prakata, Kata Sambutan, Prolog, Epilog, Isi Naskah, Daftar Pustaka, Biodata Penulis, Foto Penulis, Sinopsis, Indeks. Ditambah dua hal terpisah: saklar "Ada Pertanyaan" (ada pertanyaan ke penulis) dan indikator otomatis "Lengkap" yang aktif hanya jika 10 dari 10 tercentang.
+
+8. LOG_DARI (saran; teks bebas tetap boleh): Penulis, Editor, Penerbit, Saya, Coped, Korektor, Lama (khusus riwayat hasil impor). LOG_JENIS: Pertanyaan, Revisi, Tambahan naskah, Masalah, Info. LOG_STATUS: Baru, Selesai.
+
+9. KODE_CATATAN (ketik cepat di log, format "Dari/Jenis: isi"):
+   - Dari: P=Penulis, E=Editor, N=Penerbit, S=Saya, C=Coped, K=Korektor, -=kosong
+   - Jenis: P=Pertanyaan, R=Revisi, T=Tambahan naskah, M=Masalah, I=Info, -=Info (bawaan)
+   - Contoh: "E/R: baru masuk koreksi 1" = Dari Editor, Jenis Revisi. "S/M: kelengkapan belum ada" = Saya, Masalah. "N/I: ganti judul" = Penerbit, Info. "-/P: footnote ganda, dibiarkan?" = Dari kosong, Jenis Pertanyaan. "antri coped" (tanpa kode) = Dari kosong, Jenis Info.
+   - Aturan baca: awalan cocok dengan pola ^([PENSCK-])/([PRTMI-])\s*:\s*(.+)$ tanpa membedakan huruf besar/kecil. Jika tidak cocok, seluruh teks menjadi isi dengan Dari kosong dan Jenis Info.
+
+Selesai Tahap 0. Jangan mengubah tampilan apa pun pada tahap ini; hanya buat file konfigurasi dan pengaturan akun yang disebut (Kelompok status, Daftar status "Di Saya", Batas hari terlambat), lalu sebutkan file yang dibuat.
+
+
+=====================================================================
+TAHAP 1: DATA FIRESTORE, TEMPLATE, IMPOR & EKSPOR FILE
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0.
+
+A. SUMBER DATA: PINDAH KE FIRESTORE
+1. Ganti sumber data buku dari Google Sheets API ke Cloud Firestore: koleksi users/{uid}/books (uid dari firebase auth). Gunakan konfigurasi Firebase yang sudah ada.
+2. Field per buku (pertahankan 20 kolom lama): no, judul, penulis, kategori, paket, statusProgres, tglTerima, tglSelesaiLayout, updateTerakhir, halamanAwal, halamanFinal, stuck, nilaiJasa, statusBayar, tglInvoice, tglDibayar, catatanBelumSelesai, lamaLayoutAwal, createdAt, updatedAt. Pertahankan juga field detail yang sudah dipakai halaman detail (kelengkapan 10 bagian, kodeProduksi, nomorIsbn, statusIsbn, warna, dummy on/off, estimasi halaman awal naskah, daftar catatan lama).
+   Field BARU: ukuran (teks), catatanBuku (teks, catatan tetap per buku), adaPertanyaan (boolean), catatanBiaya (teks), catatanLain (teks), customFields (map).
+3. Hari Berjalan, Umur Piutang, dan Lama di Status Ini TIDAK disimpan; hitung di kode dengan rumus yang sekarang dipakai.
+4. Tanggal disimpan sebagai string "YYYY-MM-DD" atau null. Sebelum menulis: ubah undefined menjadi null dan string angka menjadi number (Firestore menolak undefined).
+5. Muat data dengan satu listener onSnapshot (di-unsubscribe saat logout), dengan state loading (skeleton) dan state kosong. Dashboard, Buku, Keuangan, dan Log membaca dari state yang sama.
+6. Tambah/edit/ganti status/hapus langsung menulis ke Firestore dengan update optimistik, rollback, dan pesan error. Nomor buku baru = no tertinggi + 1.
+7. Hapus kebutuhan scope Google Sheets saat login: popup izin, badge "Otorisasi Sheets Aktif", tombol "Perbarui Izin", dan "Reset Link". Sheets API hanya boleh dipanggil saat tombol "Impor dari Google Sheet" diklik (scope spreadsheets.readonly, tidak disimpan).
+8. Berikan isi aturan Firestore dan petunjuk memublikasikannya (Firebase Console > Firestore Database > Rules > Publish):
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId}/{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+     }
+   }
+9. Error permission-denied menampilkan petunjuk "Periksa aturan Firestore". Domain dasborlaporan.vercel.app harus ada di Authentication > Settings > Authorized domains.
+10. Badge "Mode demo" di header: tampil HANYA jika aplikasi memakai data contoh (belum ada buku asli di Firestore) dan hilang otomatis setelah ada data asli atau setelah impor berhasil. Beri tombol kecil "Hapus data contoh" pada badge itu.
+
+B. HALAMAN AKUN: DATA & CADANGAN
+1. Ganti kartu "Integrasi Data Google Sheets Pribadi" menjadi kartu "Data & Cadangan" berisi tombol: Impor File (.xlsx/.csv), Impor dari Google Sheet, Ekspor, Download Form Template, Download Contoh Data. Tombol "Reset Link" dihapus.
+2. DOWNLOAD FORM TEMPLATE menghasilkan file .xlsx (SheetJS, sisi klien): sheet "Data Dasbor", 24 header: No, Judul, Penulis, Kategori, Paket, Status Progres, Tgl Terima, Tgl Selesai Layout, Update Terakhir, Hari Berjalan, Halaman Awal, Halaman Final, Stuck, Nilai Jasa, Status Bayar, Tgl Invoice, Tgl Dibayar, Umur Piutang, Catatan Belum Selesai, Lama Layout Awal, Ukuran Buku, Catatan Buku, Note Tambahan Biaya, Catatan Lain. Header tebal berwarna (kolom otomatis Hari Berjalan dan Umur Piutang berwarna abu-abu), lebar kolom rapi, baris header dan kolom No/Judul dibekukan, filter aktif, dropdown (mode peringatan, nilai lain tetap boleh) untuk Paket, Status Progres, Stuck, Status Bayar, Kategori, dan Ukuran Buku sesuai KONFIGURASI, tanpa baris contoh. Jika .xlsx terlalu rumit: CSV UTF-8 dengan BOM dan pemisah titik koma (;) agar rapi di Excel Indonesia.
+3. DOWNLOAD CONTOH DATA: file dengan format sama berisi 3 baris contoh.
+4. IMPOR FILE: terima .xlsx dan .csv. Untuk CSV, deteksi otomatis pemisah (koma, titik koma, tab). Baca sheet "Data Dasbor" (atau sheet pertama). Cocokkan kolom berdasarkan NAMA HEADER (abaikan huruf besar/kecil dan spasi berlebih), jadi file lama 20 kolom tetap bisa diimpor. Parse tanggal: yyyy-mm-dd, dd/mm/yyyy, angka serial Excel, dan teks tanpa tahun seperti "21 Agu" (singkatan bulan Indonesia: Jan, Feb, Mar, Apr, Mei, Jun, Jul, Agu/Agt/Ags, Sep, Okt, Nov, Des; pakai tahun berjalan, atau tahun sebelumnya jika hasilnya lebih dari 30 hari di masa depan). Bersihkan Nilai Jasa dari "Rp" dan titik. Abaikan Hari Berjalan dan Umur Piutang. Lewati baris tanpa Judul.
+5. Tampilkan pratinjau (jumlah baris, jumlah error, jumlah tanggal yang tahunnya ditebak) dan minta konfirmasi sebelum menulis. Tulis dengan writeBatch maksimal 400 operasi per batch. Duplikat (no atau judul+penulis sama): pilihan "Lewati" atau "Timpa".
+6. EKSPOR: .xlsx (atau CSV UTF-8 BOM) dengan 24 kolom yang sama, termasuk kolom turunan yang dihitung.
+
+C. PENCEGAHAN ERROR
+Build tanpa error; tidak ada console error saat login, memuat data, mengganti status, impor, dan ekspor. Setelah selesai jelaskan langkah manual di Firebase Console (aktifkan Firestore, publish rules) dan cara memindahkan data lama lewat tombol Impor.
+
+
+=====================================================================
+TAHAP 2: TAB BUKU (FILTER, KELOMPOK STATUS, NOTIFIKASI, DAFTAR)
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0. Ubah HANYA tampilan tab "Buku". Jangan ubah data, Dashboard, Keuangan, Log, Akun, atau halaman detail buku. Screenshot yang dilampirkan adalah tampilan SAAT INI yang harus diganti.
+
+MASALAH SEKARANG: deretan pil "STATUS PROGRES NASKAH" tidak bisa di-scroll sehingga status di ujung kanan tidak terjangkau; tiga baris pil filter memenuhi layar; buku Selesai ikut memenuhi daftar; dan daftar kadang menampilkan "2 dari 44 buku" padahal semua filter tampak "Semua" (filter tersembunyi).
+
+1. BARIS KELOMPOK STATUS (menggantikan SEMUA pil status)
+- Satu baris segmented control selebar kontainer dengan 5 pilihan sama lebar: [Semua 41] [Tahap Awal 3] [Progres 20] [Masalah 2] [Finish 19], dengan hitungan dari data nyata dan pengelompokan dari STATUS_KATEGORI. TIDAK BOLEH ada scroll horizontal pada baris ini di ukuran layar apa pun.
+- HP (360px): lima kolom sama lebar, label di atas dan angka di bawah (font 12px), label boleh disingkat: Semua, Awal, Progres, Masalah, Finish.
+- Bawaan "Semua" menampilkan semua buku KECUALI berstatus STATUS_SELESAI. Di sebelah kanan baris ada saklar kecil "Tampilkan Selesai" (mati bawaan). Memilih kelompok "Finish" tetap menampilkan buku Selesai.
+- Setelah satu kelompok dipilih, muncul dropdown "Semua status" berisi status dalam kelompok itu beserta hitungan, untuk menyaring ke satu status (HP: select native).
+- Pilihan kelompok disimpan di URL hash (#semua, #awal, #progres, #masalah, #finish).
+- Tombol cepat oranye "Di Saya 3" (jumlah buku berstatus STATUS_DI_SAYA) di samping saklar: ketuk untuk menyaring ke buku itu, ketuk lagi untuk mematikan. Badge angka pada menu "Buku" memakai jumlah yang sama.
+
+2. BARIS KONTROL TUNGGAL
+Kolom cari (judul, penulis, atau no #) | tombol "Filter" (badge jumlah filter aktif) | Urut (dropdown: No, Terbaru diupdate, Terlama di status, Judul A-Z) | toggle Kartu/Daftar | tombol "Tambah Buku". HP: kolom cari satu baris penuh, Filter/Urut/toggle di baris kedua, "Tambah Buku" menjadi tombol melayang (FAB) di kanan bawah.
+
+3. PANEL FILTER (menggantikan pil Paket Layout, Kategori, dan Status Kendala)
+Tombol Filter membuka bottom sheet di HP dan popover di desktop berisi: Paket (segmented Semua/Basic/Standart/Premium), Kategori (select dari KATEGORI_BUKU), Ukuran (select dari UKURAN_BUKU), "Hanya yang stuck" (switch), "Ada pertanyaan" (switch), Pembayaran (Semua/Belum ditagih/Sudah ditagih/Lunas), tombol "Terapkan" dan "Reset". Filter aktif tampil sebagai chip kecil yang bisa dihapus satu per satu di bawah baris kontrol (muncul hanya jika ada filter aktif). HAPUS seluruh pil lama dan label "STATUS PROGRES NASKAH", "PAKET LAYOUT", "KATEGORI", "STATUS KENDALA (STUCK)".
+
+4. PERBAIKI BUG FILTER TERSEMBUNYI
+Saat semua kontrol bertuliskan "Semua", daftar harus menampilkan semua buku sesuai aturan bawaan. Setiap filter aktif SELALU terlihat sebagai chip (termasuk filter dari tautan lain, misalnya klik kartu Stuck di Dashboard). Teks "Menampilkan X dari Y buku" dan "Reset Filter" hanya muncul jika ada filter aktif; "Reset Filter" mengembalikan ke keadaan bawaan.
+
+5. DAFTAR BUKU
+- Tampilan "Daftar" (satu baris per buku): nomor, judul (1 baris, terpotong rapi), penulis, badge status berwarna sesuai kelompoknya, paket, lama di status, badge Stuck bila ada, badge "N baru" bila buku punya catatan log berstatus Baru (jika koleksi logs belum ada, abaikan dulu). Jika buku punya Catatan Buku (field catatanBuku), tampilkan satu baris kecil abu-abu dengan ikon catatan di bawah judul (terpotong 1 baris). Menu titik tiga: Buka detail, Ganti status.
+- Tampilan "Kartu" dipertahankan tetapi lebih ringkas (2 kolom di desktop, 1 kolom di HP) dengan elemen yang sama.
+- Bawaan: Daftar di desktop, Kartu di HP; pilihan tersimpan di pengaturan akun. Tampilkan 20 buku dulu dengan tombol "Muat lebih banyak".
+- Baris/kartu buku "Di Saya" diberi garis kiri oranye dan teks "Menunggu kamu - N hari" (merah jika N > BATAS_HARI_TERLAMBAT).
+
+6. Pertahankan pencarian, urutan, Tambah Buku, dan klik buku untuk membuka detail. Pastikan tidak ada console error saat ganti kelompok, memilih status, menerapkan dan mereset filter, serta mengganti tampilan.
+
+
+=====================================================================
+TAHAP 3: HALAMAN DETAIL BUKU, GANTI STATUS, UKURAN, CATATAN BUKU
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0. Ubah tampilan DETAIL BUKU saja (sekarang berupa popup/modal kecil yang panjang). Jangan mengubah logika data atau halaman lain.
+
+1. BENTUK TAMPILAN
+- Ganti popup menjadi halaman penuh dengan route sendiri (/buku/:id). Desktop: lebar maksimal 1100px di tengah dengan tombol Kembali. HP: layar penuh; tombol Back HP kembali ke daftar buku dengan posisi scroll tetap.
+- Header sticky ringkas: Kembali, #nomor, judul (maks 2 baris), penulis, badge Paket/Kategori/ISBN.
+- Ringkasan satu baris: Status Saat Ini (+ tanggal update), Lama di Status Ini, Hari Berjalan. Status tampil SATU KALI di sini saja.
+
+2. CATATAN BUKU (baru)
+- Tepat di bawah ringkasan angka (di atas tab) tampilkan kartu kecil "Catatan Buku" untuk field catatanBuku: catatan tetap tentang buku ini (misalnya "Termasuk tambahan ongkir kirim koreksi fisik penulis"), BUKAN log bertanggal.
+- Tampil maksimal 2 baris dengan "Selengkapnya". Ikon pensil membuka textarea di tempat; tersimpan otomatis saat fokus berpindah (blur) atau tombol "Simpan" kecil, dengan indikator "Tersimpan". Jika kosong, tampilkan tautan kecil "+ Tambah catatan buku".
+
+3. TAB (segmented control sticky, tersimpan di URL hash): Progres | Naskah (n/10) | Produksi | Catatan (jumlah Baru)
+- PROGRES: pilihan ganti status (lihat bagian 4) lalu garis waktu proyek (HP: vertikal) dengan toggle Dummy On/Off.
+- NASKAH: 10 centang kelengkapan (KELENGKAPAN_NASKAH; grid 1/2/3 kolom sesuai lebar), tombol "Tandai Lengkap", saklar "Ada Pertanyaan", Judul Buku dan Nama Penulis. PERBAIKI BUG: opsi "Lengkap (Semua Bagian)" tercentang padahal penghitung 0/10; jadikan indikator otomatis yang aktif hanya jika 10/10.
+- PRODUKSI: Kode Produksi, Nomor ISBN, Status ISBN (Belum/Pengajuan/Terbit), Warna (pilihan yang sudah ada), Ukuran Buku, Total Halaman (+ selisih dari estimasi awal), info layout awal dan tanggal terima. Tampilkan sebagai daftar label-nilai rapi dengan satu tombol "Ubah". Tambahkan juga field "Note Tambahan Biaya" (catatanBiaya; nilai "all clear" tampil sebagai chip hijau "All clear") dan "Catatan Lain" (catatanLain).
+  UKURAN BUKU: select berisi UKURAN_BUKU (15x23, 15,5x23,5, 14x21, B5, A5, A4) ditambah satu pilihan "Custom...". Memilih Custom memunculkan kolom teks untuk mengetik ukuran sendiri (placeholder "mis. 17,5x25"); nilai yang diketik disimpan di field ukuran. Nilai lama di luar daftar ditampilkan sebagai Custom dengan isi yang sama.
+- CATATAN: lihat Tahap 4 (jika Tahap 4 belum dikerjakan, pertahankan tab Catatan yang lama).
+
+4. GANTI STATUS SATU KETUKAN
+- Hapus kartu hijau "Status Aktif Sekarang", header "Status Progres Proyek", dan tombol "Ubah status".
+- Di tab Progres, tampilkan langsung judul kecil "Ubah status" dan semua status dari STATUS sebagai tombol, dikelompokkan di bawah judul kecil kelompok (Tahap Awal, Progres, Masalah, Finish) dan dibungkus ke bawah, bukan geser horizontal. HP: grid 2 kolom, tinggi minimal 48px. Desktop: 3 sampai 4 kolom. Status aktif ditandai (terisi + centang); lainnya outline.
+- Satu ketukan = langsung tersimpan ke Firestore: isi Update Terakhir = hari ini, reset Lama di Status Ini, dan ikuti logika yang sudah ada (misalnya mengisi Tgl Selesai Layout saat status selesai layout). Tampilkan toast "Status diubah ke [nama]" dengan tombol "Batalkan" selama 5 detik yang mengembalikan status dan tanggal update ke nilai sebelumnya. Mengetuk status yang sedang aktif tidak melakukan apa-apa.
+
+5. BAR AKSI BAWAH (sticky)
+Indikator "Tersimpan / Belum disimpan / Menyimpan... / Gagal menyimpan" dan tombol Simpan yang aktif hanya jika ada perubahan formulir (field teks/angka). Perubahan status dan centang tersimpan otomatis. Jika Kembali ditekan saat ada perubahan belum tersimpan: konfirmasi Simpan / Buang / Batal. Footer kecil: Update Terakhir dan Tgl Terima Naskah.
+
+6. Semua tempat yang tadinya membuka popup (klik buku di tab Buku, Dashboard, Keuangan, Perlu Tindakan, Log) sekarang membuka halaman ini. Hapus komponen modal lama setelah halaman baru berfungsi. Tangani buku tidak ditemukan, data belum dimuat (skeleton), dan error simpan (data input tidak hilang).
+
+
+=====================================================================
+TAHAP 4: LOG CATATAN PER BUKU (menu "Log")
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0.
+
+Tujuan: log revisi/catatan yang jelas per judul buku, meniru sheet "LOG CATATAN PER BUKU" milik saya (kolom: No, Tanggal, Dari, Isi catatan, Jenis, Status), dipisah per judul buku, dan bisa diimpor. Tahap ini menggantikan form "Catatan Pengerjaan & Track Record Revisi" yang lama.
+
+1. DATA
+- Koleksi users/{uid}/logs. Satu dokumen per catatan: bookId, bookNo (number), tanggal ("YYYY-MM-DD" atau null), dari (teks, boleh kosong), isi, jenis, status ("Baru"/"Selesai"), source ("manual"/"import"), importId (opsional), createdAt, updatedAt. Nilai awal memakai LOG_DARI, LOG_JENIS, LOG_STATUS dari konfigurasi.
+- Muat semua log dengan SATU listener onSnapshot dan kelompokkan per buku di sisi klien (tidak perlu composite index). Hapus log saat bukunya dihapus (dengan konfirmasi).
+- Migrasi catatan lama (track record dengan tag Revisi Penulis, Korektor / Coped, Finishing, Cetak Dummy, ACC Cetak, Catatan Umum): sekali saja dan aman diulang (idempotent), salin ke logs dengan pemetaan: Revisi Penulis -> dari Penulis, jenis Revisi; Korektor / Coped -> dari Coped, jenis Info; tag lain -> dari Saya, jenis Info; status Selesai; tanggal tetap. Jangan menghapus data lama.
+
+2. MENU BARU "LOG" (menu atas, antara Buku dan Keuangan; badge angka = jumlah catatan berstatus Baru)
+- Tab: [Baru 5] [Semua 62] [Selesai 57]. Bawaan: Baru. Tersimpan di URL hash.
+- Satu baris kontrol: kolom cari (isi catatan atau judul), tombol Filter (Jenis, Dari, Buku, rentang tanggal; badge jumlah filter aktif; bottom sheet di HP, popover di desktop; chip filter aktif bisa dihapus satu per satu), urutan (Terbaru di atas / Terlama di atas), dan tombol "Tambah Catatan".
+- Daftar DIPISAH PER JUDUL BUKU: tiap buku punya kepala grup (nomor, judul, badge oranye jumlah catatan Baru, panah lipat/buka). Urutan grup: buku yang punya catatan Baru dulu, lalu menurut nomor buku. Buku tanpa catatan pada tab/filter aktif tidak ditampilkan. Ketuk judul membuka detail buku (tab Catatan).
+- Baris catatan: tanggal (format "27 Okt"; tampilkan tahun bila bukan tahun berjalan), chip Dari, isi (boleh beberapa baris), chip Jenis berwarna (Info abu-abu, Revisi oranye, Pertanyaan biru, Tambahan naskah ungu, Masalah merah), dan chip Status yang bisa diketuk untuk bergantian Baru <-> Selesai (satu ketukan, langsung tersimpan, toast Batalkan 5 detik). Menu titik tiga: Edit, Hapus (dengan konfirmasi).
+- Catatan dengan dari = "Lama" disembunyikan di bagian terlipat "Riwayat lama (N)" di bawah tiap grup, tampil redup, seperti di sheet saya.
+- Catatan Baru diberi garis kiri oranye; Jenis Masalah yang masih Baru diberi garis kiri merah.
+- HP: satu kolom; baris menumpuk (tanggal+dari+jenis di atas, isi di bawah); tombol Tambah Catatan sebagai FAB. State kosong yang rapi ("Tidak ada catatan baru").
+
+3. TAB CATATAN DI HALAMAN DETAIL BUKU
+- KETIK CEPAT: satu kolom input di atas dengan placeholder "Ketik cepat, mis. E/R: baru masuk koreksi 1". Aturan baca memakai KODE_CATATAN dari Tahap 0. Saat mengetik, tampilkan pratinjau chip hasilnya ("Editor - Revisi") dan tekan Enter untuk menambah. Tanggal otomatis hari ini, status Baru.
+- Form lengkap (bagian "Lebih rinci"): Tanggal (type="date", bawaan hari ini), Dari (chip tunggal dari LOG_DARI + "Lainnya..." untuk teks bebas), Jenis (segmented 5 pilihan), Isi catatan (textarea), tombol "Tambah Catatan" (nonaktif jika isi kosong).
+- Di bawahnya log buku ini dengan baris yang sama seperti menu Log, tab kecil [Baru] [Semua], dan bagian "Riwayat lama (N)". Tombol "Tandai semua selesai". Badge pada tab = jumlah catatan Baru buku ini.
+- Catatan Buku (field catatanBuku) pada Tahap 3 tetap terpisah dari log.
+
+4. IMPOR LOG (Akun > Data & Cadangan > tombol "Impor Log Catatan")
+Format yang HARUS terbaca (persis sheet saya): .xlsx/.csv, atau lewat "Impor dari Google Sheet" (izin spreadsheets.readonly hanya diminta saat diklik, dengan pilihan tab).
+- Baris judul besar ("LOG CATATAN PER BUKU") dan baris kosong di atas header dilewati. Cari baris header yang berisi "Tanggal" dan "Isi catatan" (abaikan huruf besar/kecil); cocokkan kolom berdasarkan nama header: No, Tanggal, Dari, Isi catatan (atau "Isi"/"Catatan"), Jenis, Status.
+- BARIS KEPALA GRUP: baris yang punya No dan teks judul, tetapi kolom Dari dan Isi kosong. Jangan dijadikan catatan; gunakan hanya sebagai petunjuk pencocokan No -> judul.
+- BARIS CATATAN: baris yang kolom Isi-nya terisi. Baris kosong dilewati. Kolom Dari dan Jenis boleh berisi kata penuh (Coped, Revisi, Tambahan naskah) atau kode satu huruf (P/E/N/S/C/K dan P/R/T/M/I).
+- PENCOCOKAN BUKU: utamakan No terhadap field no buku; cadangan: judul yang dinormalisasi. Baris yang bukunya tidak ditemukan tidak diimpor; tampilkan daftarnya di pratinjau (No dan judul).
+- TANGGAL: baca "27 Okt", "4 Nov", "13 Nov", "9 Okt" (singkatan bulan Indonesia, tanpa tahun: pakai tahun berjalan, atau tahun sebelumnya jika hasilnya lebih dari 30 hari di masa depan), serta yyyy-mm-dd, dd/mm/yyyy, dan serial Excel/Sheets. Tanggal kosong diperbolehkan (null).
+- NILAI KOSONG: dari kosong -> "Lama" jika tanggal juga kosong, selain itu dibiarkan kosong; jenis kosong -> "Info"; status kosong -> "Selesai" (agar tab Baru tidak banjir). Pangkas spasi; pertahankan tanda "//" dan huruf besar di isi.
+- ANTI DUPLIKAT: ID dokumen deterministik dari hash(bookId + tanggal + dari + isi yang dinormalisasi), sehingga mengimpor file yang sama dua kali tidak membuat catatan ganda. Tampilkan jumlah baru, duplikat dilewati, dan gagal.
+- PRATINJAU sebelum menulis: jumlah catatan, jumlah buku terkait, baris yang dilewati (beserta alasannya), contoh 5 catatan pertama, tombol Konfirmasi. writeBatch maksimal 400 operasi per batch.
+
+5. EKSPOR & TEMPLATE LOG
+- "Ekspor Log": .xlsx dengan tata letak yang SAMA seperti sheet saya (judul "LOG CATATAN PER BUKU", header No, Tanggal, Dari, Isi catatan, Jenis, Status, lalu per buku: baris kepala grup dan baris catatannya, header berwarna, lebar kolom rapi, dropdown Dari/Jenis/Status) agar bisa diimpor kembali tanpa perubahan.
+- "Download Template Log": file kosong dengan format yang sama dan 3 baris contoh (gunakan contoh kode catatan).
+
+6. INTEGRASI
+- Ikon lonceng (header): panel berisi buku Menunggu Saya (terlama dulu), buku Stuck, Siap Ditagih, dan Catatan Baru (terutama dari Penerbit/Penulis atau Jenis Masalah); ketuk baris membuka detail atau menu Log. Badge angka pada lonceng = total item.
+- Judul tab browser: "(N) Schnell" bila ada buku Di Saya atau catatan Baru.
+- Setiap penambahan catatan dicatat ke koleksi activity (untuk Aktivitas Terbaru di Dashboard).
+
+7. Semua operasi dibungkus try/catch; update optimistik untuk pergantian status catatan dengan rollback. Pastikan tidak ada console error saat menambah (termasuk ketik cepat), mengedit, menghapus, mengganti status, mengimpor, dan mengekspor log.
+
+
+=====================================================================
+TAHAP 5: DASHBOARD BARU
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0. Ubah HANYA halaman Dashboard. Tetap pakai menu atas yang ada (jangan buat sidebar). Semua angka dihitung dari state Firestore yang sama. Pertahankan semua rumus yang sudah ada (persentase target, grafik mingguan berdasarkan tanggal terima dan selesai, komposisi status); hanya tata letak yang berubah ditambah bagian baru yang disebut.
+
+Masalah sekarang: kartu KPI terlalu besar dan banyak ruang kosong, badge "0%" tidak informatif, selektor periode memakai satu kartu penuh, grafik kosong memenuhi layar, dan banner biru "siap ditagih" terpisah dari kartu lain.
+
+1. HEADER: judul "Dashboard" dan selektor periode ringkas di kanan (panah < Oktober 2026 > dan tombol "Semua"), tanpa kartu tersendiri. HP: selektor di bawah judul, selebar layar.
+
+2. BANNER SAPAAN (gradien biru, sudut 20px): "Halo, [nama depan dari akun Google]" + tanggal hari ini + kalimat dinamis ("3 buku menunggu kamu" atau "Semua beres hari ini"). Di dalamnya 4 mini-statistik: Menunggu Saya, Buku Masuk (periode), Siap Ditagih, Piutang (nominal ditagih belum dibayar). Tombol kecil di kanan: Impor dan Refresh. HP: banner lebih pendek, statistik 2x2.
+
+3. PERLU TINDAKAN (3 kartu berwarna lembut):
+   - "Menunggu Saya" (oranye): jumlah buku STATUS_DI_SAYA, tombol "Tinjau" menuju tab Buku dengan filter Di Saya.
+   - "Stuck" (merah): jumlah buku stuck, tombol "Lihat".
+   - "Siap Ditagih" (biru, menonjol hanya jika jumlah > 0): jumlah buku selesai yang belum ditagih, teks "Total potensi pemasukan Rp... belum diterbitkan invoice", tombol utama "Buat Invoice" (membuka alur pembuatan invoice yang sudah ada) dan tombol sekunder "Keuangan".
+   Banner biru terpisah "N buku selesai siap ditagih!" DIHAPUS karena informasinya sudah ada di kartu ini. Jika jumlah suatu kartu 0, kartu tampil netral dengan centang hijau. HP: satu kolom.
+
+4. KPI (4 kartu, tinggi maks ~120px): Buku Selesai (progress terhadap target bulanan), Masih Aktif, Ditagih (progress = Dibayar/Ditagih), Dibayar (Lunas). Tiap kartu: ikon, label, angka besar, badge perubahan terhadap periode sebelumnya (hijau naik/merah turun; sembunyikan jika tidak ada pembanding, jangan tampilkan "0%"), progress tipis, keterangan kecil. Nominal rupiah disingkat di HP (Rp1,5 jt). Desktop 4 kolom, tablet 2, HP 2. Setiap kartu bisa diketuk menuju daftar yang relevan dengan filter terpasang.
+
+5. ANALITIK (grid 12 kolom di desktop, satu kolom di HP):
+   - Kiri (8 kolom): "Pendapatan per Bulan": batang horizontal 6 bulan terakhir; tiap bulan menampilkan Ditagih vs Dibayar, jumlah buku, dan persentase pembayaran. Di bawahnya 4 mini-statistik (Total Ditagih, Total Dibayar, Rata-rata per Bulan, Total Buku) dan toggle "Bulan Ini / Tahun Ini".
+   - Kanan (4 kolom): "Aktivitas Terbaru": 6 aktivitas terakhir (ganti status, catatan baru, buku baru, pembayaran) dengan ikon, teks singkat, dan waktu relatif ("2 jam lalu"), tombol "Lihat semua". Simpan di koleksi users/{uid}/activity (type, bookId, judul, teks, createdAt); ambil 6 terbaru dengan orderBy createdAt desc, limit 6. State kosong yang rapi bila belum ada.
+
+6. BARIS KEDUA:
+   - Target Bulan Ini (ring ringkas + "9 dari target 5 buku" + tautan Ubah).
+   - Aktivitas Mingguan (Buku Masuk vs Selesai Layout); jika semua nol tampilkan satu pesan "Belum ada aktivitas pada periode ini" sebagai pengganti grafik kosong.
+   - Komposisi Status Progres: donut berukuran sedang dengan 4 irisan sesuai STATUS_KATEGORI (Tahap Awal, Progres, Masalah, Finish) dan legenda vertikal; ketuk satu irisan memfilter tab Buku ke kelompok itu. Sembunyikan kelompok berjumlah 0.
+
+7. BUKU TERLAMA DI PROSES (daftar bernomor 1 sampai 3): judul, status, lama di status (hari), badge merah jika melewati BATAS_HARI_TERLAMBAT. Ketuk membuka detail. Hanya buku yang bukan STATUS_SELESAI.
+
+8. AKSI CEPAT (4 ubin berwarna): Tambah Buku, Impor Data, Ekspor, Buka Keuangan.
+
+Gaya: spasi konsisten (kelipatan 4/8px), sudut kartu 16px, bayangan sangat tipis, tanpa kartu di dalam kartu, hierarki teks jelas, angka bergaya tabular (font-variant-numeric: tabular-nums), skeleton saat loading.
+
+
+=====================================================================
+TAHAP 6: IMPOR WORKBOOK GOOGLE SHEETS (SEMUA TAB) + PEMETAAN KOLOM
+=====================================================================
+Ikuti ATURAN UMUM dan KONFIGURASI dari Tahap 0. Kerjakan setelah Tahap 1 dan Tahap 4 selesai.
+
+Tujuan: memindahkan seluruh data dari spreadsheet "DATA PROGRES LAYOUT" (tab: Data Dasbor, Data, Ringkasan Posisi, List Progress Layout, Log Catatan, Laporan Keuangan, Invoice) ke Firestore tanpa pengguna harus menyesuaikan susunan sheet-nya. Melengkapi (bukan menghapus) impor file di Tahap 1 dan impor log di Tahap 4.
+
+1. PINTU MASUK: di Akun > Data & Cadangan tambahkan tombol "Impor Workbook (semua tab)". Terima .xlsx (File > Download > Microsoft Excel di Google Sheets; dianjurkan karena tanggal terbaca lengkap dengan tahun) dan "Impor dari Google Sheet" lewat tautan (izin spreadsheets.readonly hanya saat diklik, membaca semua tab). Baca juga baris dan kolom yang disembunyikan.
+
+2. LANGKAH 1: DETEKSI TAB. Tampilkan semua tab dengan jenis terdeteksi dan checkbox; jenis bisa diubah per tab:
+   - "List Progress Layout" -> Buku (data utama)
+   - "Log Catatan" -> Log catatan (aturan impor Tahap 4)
+   - "Invoice" dan "Laporan Keuangan" -> Keuangan (tampilkan pratinjau dan pemetaan; jika tidak cocok, tawarkan "Lewati")
+   - "Data Dasbor", "Data", "Ringkasan Posisi" -> tab bantu/turunan, TIDAK dicentang bawaan. (Tab "Data" berisi daftar master yang sudah ada di KONFIGURASI; tidak perlu diimpor.)
+   Deteksi dari nama tab (abaikan huruf besar/kecil dan spasi), lalu dari isi header.
+
+3. LANGKAH 2: HEADER BERTINGKAT
+   - Header = semua baris dari atas sampai sebelum baris pertama yang kolom "No"-nya berisi angka (di List Progress Layout: baris 1 sampai 3, data mulai baris 4).
+   - Sel gabungan (merged) diperlakukan sebagai milik seluruh rentangnya. Nama kolom efektif = "Grup / Subjudul" bila ada subjudul (misalnya "Payout / Invoice" dan "Payout / Paid"), jika tidak, judulnya saja. Header kosong diberi nama "Kolom [huruf]" (mis. "Kolom AI").
+   - Lewati baris yang seluruhnya kosong, baris total, dan baris yang kolom "No"-nya bukan angka.
+
+4. LANGKAH 3: PEMETAAN KOLOM (WIZARD). Tabel "Kolom di file" -> "Field di aplikasi" (dropdown) dengan 3 contoh nilai. Auto-map berdasarkan nama header (abaikan huruf besar/kecil, spasi, tanda baca), sinonim:
+   - no: No, Nomor | judul: Judul Buku, Judul | penulis: Penulis | kategori: Kategori | paket: Paket
+   - statusProgres: Status Progres, Status, Status Buku
+   - tglTerima: Tgl Terima, Tanggal Terima, Terima Naskah | tglSelesaiLayout: Tgl Selesai Layout, Selesai Layout | updateTerakhir: Update Terakhir
+   - halamanAwal, halamanFinal: Halaman Awal, Halaman Final | stuck: Stuck, Kendala | nilaiJasa: Nilai Jasa, Nominal
+   - statusBayar: Status Bayar | tglInvoice: Tgl Invoice, Payout / Invoice (jika isinya tanggal) | tglDibayar: Tgl Dibayar, Payout / Paid
+   - ukuran: Ukuran Buku, Ukuran | catatanBuku: Catatan Buku
+   - catatanBiaya: Note Tambahan Biaya, Tambahan Biaya | catatanLain: kolom tanpa header atau tidak dikenal yang berisi teks (mis. yang berisi "cet 2 - acc cetak")
+   - "Keterangan" -> JANGAN diimpor (otomatis "Lewati"): hasil rumus dari Log Catatan. Aplikasi menghitung sendiri ringkasan "tanggal terbaru - isi catatan terbaru - N catatan, M belum selesai" dari koleksi logs dan menampilkannya di kartu/daftar buku.
+   Aturan tipe: kolom bertipe tanggal -> field tanggal; kolom angka besar (>= 1000) -> field nominal; kolom teks -> field teks. Tampilkan tebakan agar bisa diubah.
+   Kolom yang tidak dikenali ditandai kuning dengan pilihan: Lewati / Petakan ke field yang ada / "Simpan sebagai field tambahan" (disimpan di customFields dengan nama header sebagai kunci, ditampilkan di tab Produksi).
+   Simpan pemetaan di users/{uid}/settings/importMapping (per nama tab) agar impor berikutnya otomatis. Tampilkan pratinjau 5 baris hasil pemetaan sebelum lanjut.
+
+5. NILAI & TANGGAL
+   - Status Progres: cocokkan teks dengan STATUS (abaikan huruf besar/kecil). Status yang belum ada di daftar: tampilkan "Status baru ditemukan: X" dengan pilihan "Tambahkan ke daftar status" atau "Petakan ke status yang ada".
+   - Ukuran dan Kategori: nilai di luar daftar dibiarkan apa adanya (ukuran diperlakukan sebagai Custom).
+   - Tanggal: terima tanggal sebenarnya dari xlsx, yyyy-mm-dd, dd/mm/yyyy, serial Excel, dan teks tanpa tahun seperti "21 Agu", "18 Sep", "23 Okt" (tahun berjalan, atau tahun sebelumnya jika lebih dari 30 hari di masa depan). Tampilkan jumlah tanggal yang tahunnya ditebak di pratinjau.
+   - Angka: bersihkan "Rp", titik, spasi. Warna sel (mis. dropdown berwarna) diabaikan; baca sebagai teks.
+
+6. PENCOCOKAN & ANTI DUPLIKAT: cocokkan buku berdasarkan No (cadangan: judul yang dinormalisasi). Mengimpor ulang memperbarui buku yang sama, bukan membuat ganda. Sebelum menimpa buku yang sudah ada, tampilkan perbedaan per field ("Status Progres: Di Penulis -> Selesai") dengan pilihan global: "Timpa semua", "Hanya isi field yang kosong", atau "Lewati yang sudah ada".
+
+7. URUTAN & LAPORAN: Buku dulu, lalu Log Catatan (membutuhkan buku), lalu Keuangan. Progress bar per tahap. Laporan akhir: jumlah buku, catatan, dan invoice yang diimpor, diperbarui, dilewati, dan gagal beserta alasannya; tombol "Unduh laporan baris bermasalah (CSV)".
+
+8. KEAMANAN DATA (WAJIB)
+   - Beri setiap dokumen hasil impor field importId (ID batch impor). Sediakan tombol "Batalkan impor terakhir" yang menghapus hanya dokumen dengan importId itu (dengan konfirmasi), tidak pernah menghapus data yang dibuat manual.
+   - writeBatch maksimal 400 operasi per batch; semua operasi dibungkus try/catch; impor yang gagal di tengah tidak boleh meninggalkan data setengah jalan tanpa laporan.
+   - Jangan mengubah struktur data buku selain field baru yang sudah disebut. Pastikan build tanpa error dan tidak ada console error saat impor, pemetaan, pembatalan, dan impor ulang.
+
+
+=====================================================================
+URUTAN PENGERJAAN YANG DISARANKAN
+=====================================================================
+0 (konfigurasi) -> 1 (Firestore + template/impor) -> impor data lama lewat file -> 2 (tab Buku) -> 3 (detail buku) -> 4 (Log) -> 5 (Dashboard) -> 6 (impor workbook penuh bila masih perlu).
+Setiap selesai satu tahap, buka aplikasi, cek di lebar HP (360px) dan desktop, lalu lanjut.

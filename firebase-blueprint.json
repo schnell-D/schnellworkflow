@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Pengaturan dasbor pengguna yang tersinkronisasi antar perangkat",
+      "type": "object",
+      "properties": {
+        "monthlyTarget": {
+          "type": "number",
+          "description": "Target penyelesaian buku bulanan"
+        },
+        "packageRates": {
+          "type": "object",
+          "description": "Tarif jasa layout per halaman untuk masing-masing paket"
+        },
+        "dummyStatuses": {
+          "type": "object",
+          "description": "Status cetak dummy per nomor buku"
+        },
+        "bookNotes": {
+          "type": "object",
+          "description": "Catatan track record dan revisi buku (legacy)"
+        },
+        "customStatuses": {
+          "type": "array",
+          "description": "Daftar status progres tambahan buatan pengguna"
+        },
+        "statusGroupOverrides": {
+          "type": "object",
+          "description": "Peta pemindahan kelompok status oleh pengguna (Tahap 0)"
+        },
+        "statusDiSaya": {
+          "type": "array",
+          "description": "Daftar status yang dihitung sebagai Di Saya / menunggu tindakan saya"
+        },
+        "statusSelesai": {
+          "type": "string",
+          "description": "Nama status penanda buku selesai akhir"
+        },
+        "batasHariTerlambat": {
+          "type": "number",
+          "description": "Batas hari keterlambatan untuk penanda merah"
+        },
+        "bukuViewMode": {
+          "type": "string",
+          "description": "Mode tampilan bawaan tab Buku (daftar atau kartu)"
+        },
+        "logsMigrated": {
+          "type": "boolean",
+          "description": "Penanda migrasi otomatis catatan lama ke koleksi logs"
+        },
+        "lastImport": {
+          "type": "object",
+          "description": "Metadata impor batch terakhir untuk fitur batalkan impor"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Waktu pembaruan data terakhir ISO string"
+        }
+      }
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Data proyek buku non-fiksi dalam koleksi users/{userId}/books",
+      "type": "object",
+      "properties": {
+        "no": { "type": "number" },
+        "judul": { "type": "string" },
+        "penulis": { "type": "string" },
+        "kategori": { "type": "string" },
+        "paket": { "type": "string" },
+        "statusProgres": { "type": "string" },
+        "tglTerima": { "type": ["string", "null"] },
+        "tglSelesaiLayout": { "type": ["string", "null"] },
+        "updateTerakhir": { "type": ["string", "null"] },
+        "halamanAwal": { "type": "number" },
+        "halamanFinal": { "type": "number" },
+        "stuck": { "type": "string" },
+        "nilaiJasa": { "type": "number" },
+        "statusBayar": { "type": "string" },
+        "tglInvoice": { "type": ["string", "null"] },
+        "tglDibayar": { "type": ["string", "null"] },
+        "catatanBelumSelesai": { "type": "string" },
+        "ukuran": { "type": ["string", "null"] },
+        "ukuranBuku": { "type": ["string", "null"] },
+        "catatanBuku": { "type": ["string", "null"] },
+        "adaPertanyaan": { "type": "boolean" },
+        "catatanBiaya": { "type": ["string", "null"] },
+        "catatanLain": { "type": ["string", "null"] },
+        "customFields": { "type": ["object", "null"] },
+        "importId": { "type": ["string", "null"] },
+        "halamanWarna": { "type": ["string", "null"] },
+        "estimasiHalaman": { "type": ["number", "null"] },
+        "kodeProduksi": { "type": ["string", "null"] },
+        "isbn": { "type": ["string", "null"] },
+        "statusIsbn": { "type": ["string", "null"] },
+        "kelengkapanNaskah": { "type": "array" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      }
+    },
+    "BookLog": {
+      "title": "BookLog",
+      "description": "Catatan revisi, pertanyaan, info, dan masalah per buku dalam koleksi users/{userId}/logs",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string" },
+        "bookNo": { "type": "number" },
+        "tanggal": { "type": ["string", "null"] },
+        "dari": { "type": "string" },
+        "isi": { "type": "string" },
+        "jenis": { "type": "string" },
+        "status": { "type": "string" },
+        "source": { "type": "string" },
+        "importId": { "type": ["string", "null"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      }
+    },
+    "ActivityEntry": {
+      "title": "ActivityEntry",
+      "description": "Riwayat aktivitas terbaru pada dasbor pengguna",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "bookId": { "type": ["string", "null"] },
+        "bookNo": { "type": ["number", "null"] },
+        "judul": { "type": ["string", "null"] },
+        "importId": { "type": ["string", "null"] },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "ImportMapping": {
+      "title": "ImportMapping",
+      "description": "Pemetaan kolom tersimpan per nama tab di users/{userId}/settings/importMapping",
+      "type": "object",
+      "properties": {
+        "mappings": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Dokumen pengaturan dan status migrasi pengguna per UID"
+    },
+    "/users/{userId}/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Subkoleksi utama buku pengguna di Cloud Firestore"
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": { "$ref": "#/entities/BookLog" },
+      "description": "Subkoleksi log catatan dan revisi per buku di Cloud Firestore"
+    },
+    "/users/{userId}/activity/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityEntry" },
+      "description": "Subkoleksi aktivitas terbaru untuk ringkasan Dashboard"
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ImportMapping" },
+      "description": "Dokumen pengaturan pemetaan kolom impor per tab"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "RGP Layout - Dasbor Laporan Buku",
+  "description": "Dasbor modern laporan pekerjaan layout buku non-fiksi dan keuangan freelancer RGP Layout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
