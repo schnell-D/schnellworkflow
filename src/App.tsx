@@ -64,6 +64,7 @@ import {
   computeDerivedBookFields,
   getTodayIsoDate,
 } from './utils/bookHelpers';
+import { countBooksDiSaya } from './config/masterData';
 import {
   downloadTemplateXlsx,
 } from './utils/sheetHelpers';
@@ -804,8 +805,22 @@ export default function App() {
     void downloadTemplateXlsx('Template_Form_Schnell.xlsx');
   };
 
-  // Hitung buku Stuck & Catatan Baru untuk badge navigasi + lonceng notifikasi
-  const stuckCount = books.filter((b) => b.stuck === 'Ya').length;
+  // Hitung buku di posisi "Di Saya" (satu sumber dengan chip filter "Di Saya" di BukuTab)
+  const diSayaCount = useMemo(
+    () =>
+      countBooksDiSaya(
+        books,
+        cloudProfileData?.statusDiSaya,
+        cloudProfileData?.statusSelesai,
+        cloudProfileData?.statusGroupOverrides
+      ),
+    [
+      books,
+      cloudProfileData?.statusDiSaya,
+      cloudProfileData?.statusSelesai,
+      cloudProfileData?.statusGroupOverrides,
+    ]
+  );
   const nextBookNo = books.length > 0 ? Math.max(...books.map((b) => b.no)) + 1 : 1;
 
   const { newLogsCount, urgentNewLogs } = useMemo(() => {
@@ -882,7 +897,7 @@ export default function App() {
           onToggleDark={() => setIsDark(!isDark)}
           onRefresh={handleManualRefresh}
           isRefreshing={isRefreshing}
-          stuckCount={stuckCount}
+          diSayaCount={diSayaCount}
           newLogsCount={newLogsCount}
           urgentNewLogs={urgentNewLogs}
           onOpenLogBaru={openLogTabOnBaru}
@@ -1027,6 +1042,9 @@ export default function App() {
                 books={books}
                 logs={logs}
                 customStatuses={customStatuses}
+                statusGroupOverrides={cloudProfileData?.statusGroupOverrides}
+                statusDiSaya={cloudProfileData?.statusDiSaya}
+                statusSelesai={cloudProfileData?.statusSelesai}
                 onSelectBook={(b) => openBookDetail(b)}
                 onAddNewBook={handleAddNewBook}
                 onOpenImport={() => setIsWorkbookImportOpen(true)}
@@ -1158,7 +1176,7 @@ export default function App() {
           setActiveTab(tab);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        stuckCount={stuckCount}
+        diSayaCount={diSayaCount}
         newLogsCount={newLogsCount}
       />
       </div>

@@ -12,6 +12,8 @@ import {
   Receipt,
   History,
   FileText,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { BookJob, KeuanganSubTab, PaketType } from '../types';
 import {
@@ -43,6 +45,7 @@ interface KeuanganRingkasanProps {
   onSelectBook: (book: BookJob) => void;
   onGoToInvoice: (bookId: number) => void;
   currentUid?: string;
+  hideNominals?: boolean;
 }
 
 const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
@@ -50,7 +53,11 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
   onSelectBook,
   onGoToInvoice,
   currentUid = '',
+  hideNominals = true,
 }) => {
+  const displayRupiah = (amount: number) => (hideNominals ? 'Rp •••••' : formatRupiah(amount));
+  const displayRupiahShort = (amount: number) =>
+    hideNominals ? 'Rp •••••' : formatRupiahShort(amount);
   // Pengaturan Tarif Paket Layout per Halaman (tersimpan di userStorage per akun)
   const [packageRates, setPackageRates] = useState<PackageRates>(() => {
     return getUserPackageRates(currentUid);
@@ -126,11 +133,11 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             <div>
               <span className="text-xs text-slate-500 dark:text-slate-400">Total Nilai Jasa Keseluruhan</span>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white tabular-nums mt-0.5">
-                {formatRupiah(totalNilaiJasa)}
+                {displayRupiah(totalNilaiJasa)}
               </h2>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Rata-rata per buku: <strong className="text-slate-800 dark:text-slate-200">{formatRupiah(Math.round(totalNilaiJasa / (books.length || 1)))}</strong>
+              Rata-rata per buku: <strong className="text-slate-800 dark:text-slate-200">{displayRupiah(Math.round(totalNilaiJasa / (books.length || 1)))}</strong>
             </div>
           </div>
         </div>
@@ -175,7 +182,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             </div>
             <div className="mt-2">
               <span className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums block">
-                {formatRupiah(lunasNominal)}
+                {displayRupiah(lunasNominal)}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
                 {lunasBooks.length} judul buku selesai & dibayar
@@ -194,7 +201,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             </div>
             <div className="mt-2">
               <span className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums block">
-                {formatRupiah(belumDibayarNominal)}
+                {displayRupiah(belumDibayarNominal)}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
                 {belumDibayarBooks.length} tagihan menunggu transfer
@@ -213,7 +220,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             </div>
             <div className="mt-2">
               <span className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums block">
-                {formatRupiah(belumDitagihNominal)}
+                {displayRupiah(belumDitagihNominal)}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
                 {belumDitagihBooks.length} buku berjalan/siap faktur
@@ -257,7 +264,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
 
                   <div className="mt-3">
                     <span className="text-xl font-extrabold text-slate-900 dark:text-white tabular-nums block">
-                      {formatRupiah(pkt.nilaiTotal)}
+                      {displayRupiah(pkt.nilaiTotal)}
                     </span>
                     <span className="text-xs text-slate-500 mt-0.5 block">
                       {pkt.jumlahBuku} buku ({Math.round(pkt.totalHalaman / (pkt.jumlahBuku || 1))} hlm rata-rata)
@@ -268,7 +275,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                 <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-500 flex justify-between">
                   <span>Rata-rata/buku:</span>
                   <strong className="text-slate-800 dark:text-slate-200">
-                    {formatRupiah(Math.round(pkt.nilaiTotal / (pkt.jumlahBuku || 1)))}
+                    {displayRupiah(Math.round(pkt.nilaiTotal / (pkt.jumlahBuku || 1)))}
                   </strong>
                 </div>
               </div>
@@ -289,7 +296,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#1A9E7A] dark:bg-emerald-950/40 dark:text-emerald-400 self-start sm:self-auto">
-            Total Diterima: {formatRupiah(lunasNominal)}
+            Total Diterima: {displayRupiah(lunasNominal)}
           </span>
         </div>
 
@@ -307,7 +314,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                       style={{ height: `${Math.max(heightPct, 8)}%` }}
                     >
                       <span className="text-[10px] font-bold text-white absolute -top-5 whitespace-nowrap tabular-nums">
-                        {formatRupiahShort(item.totalDibayar)}
+                        {displayRupiahShort(item.totalDibayar)}
                       </span>
                     </div>
                   </div>
@@ -344,7 +351,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                 </div>
               </div>
               <span className="text-xs font-bold text-[#F59E0B] tabular-nums">
-                {formatRupiah(belumDibayarNominal)}
+                {displayRupiah(belumDibayarNominal)}
               </span>
             </div>
 
@@ -380,7 +387,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
 
                       <div className="text-right shrink-0">
                         <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums block">
-                          {formatRupiah(book.nilaiJasa)}
+                          {displayRupiah(book.nilaiJasa)}
                         </span>
                         <span
                           className={`text-[11px] font-semibold tabular-nums ${
@@ -421,7 +428,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                 </div>
               </div>
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tabular-nums">
-                {formatRupiah(belumDitagihNominal)}
+                {displayRupiah(belumDitagihNominal)}
               </span>
             </div>
 
@@ -455,7 +462,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="text-right">
                         <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums block">
-                          {formatRupiah(book.nilaiJasa)}
+                          {displayRupiah(book.nilaiJasa)}
                         </span>
                         <span className="text-[10px] text-slate-400 block">
                           {book.halamanFinal} hlm
@@ -776,7 +783,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                   Estimasi Biaya Layout:
                 </span>
                 <div className="text-2xl sm:text-3xl font-black text-amber-300 tabular-nums mt-1">
-                  {formatRupiah(calculatedEstimatedCost)}
+                  {displayRupiah(calculatedEstimatedCost)}
                 </div>
 
                 <div className="text-xs text-slate-200 mt-2 space-y-1">
@@ -799,7 +806,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                 <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-slate-300 flex items-center justify-between">
                   <span>Nilai Jasa di data:</span>
                   <span className="font-bold text-white tabular-nums">
-                    {formatRupiah(selectedCalcBook.nilaiJasa)}
+                    {displayRupiah(selectedCalcBook.nilaiJasa)}
                   </span>
                 </div>
               )}
@@ -824,6 +831,8 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   const [internalInvoiceBookId, setInternalInvoiceBookId] = useState<number | null>(
     selectedInvoiceBookId || null
   );
+  // Default tersembunyi setiap kali tab Keuangan dibuka (pilihan terakhir tidak disimpan)
+  const [hideNominals, setHideNominals] = useState<boolean>(true);
 
   useEffect(() => {
     if (activeSubTab) {
@@ -852,62 +861,97 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. Sub Header Navigasi Keuangan (Disembunyikan saat cetak) */}
-      <div className="no-print print:hidden bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-bold flex items-center justify-center">
+      <div className="no-print print:hidden bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-bold flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5" />
             </span>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                Manajemen Keuangan & Faktur Tagihan
+                Manajemen Keuangan &amp; Faktur Tagihan
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Pilih sub-menu untuk melihat ringkasan omzet, membuat faktur, atau cek riwayat penagihan
               </p>
             </div>
           </div>
+
+          {/* Tombol Mata di HP */}
+          <button
+            type="button"
+            onClick={() => setHideNominals((prev) => !prev)}
+            aria-pressed={hideNominals}
+            aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            className="lg:hidden min-w-[44px] min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 transition-colors"
+          >
+            {hideNominals ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+          </button>
         </div>
 
-        {/* Sub Tabs Pill Control */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 overflow-x-auto no-scrollbar shrink-0">
-          <button
-            type="button"
-            onClick={() => handleSubTabChange('ringkasan')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              internalSubTab === 'ringkasan'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Ringkasan & Piutang</span>
-          </button>
+        {/* Sub Tabs Pill Control + Tombol Mata Desktop */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 overflow-x-auto no-scrollbar flex-1 sm:flex-initial">
+            <button
+              type="button"
+              onClick={() => handleSubTabChange('ringkasan')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                internalSubTab === 'ringkasan'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Ringkasan &amp; Piutang</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSubTabChange('invoice')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                internalSubTab === 'invoice'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Buat &amp; Cetak Invoice</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSubTabChange('riwayat')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                internalSubTab === 'riwayat'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Riwayat Invoice</span>
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => handleSubTabChange('invoice')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              internalSubTab === 'invoice'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            onClick={() => setHideNominals((prev) => !prev)}
+            aria-pressed={hideNominals}
+            aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            className="hidden lg:flex min-w-[44px] min-h-[38px] px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 items-center justify-center gap-1.5 text-xs font-bold shrink-0 transition-colors"
           >
-            <Receipt className="w-3.5 h-3.5" />
-            <span>Buat & Cetak Invoice</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSubTabChange('riwayat')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              internalSubTab === 'riwayat'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Riwayat Invoice</span>
+            {hideNominals ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                <span>Tampilkan</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Sembunyikan</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -919,6 +963,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
           onSelectBook={onSelectBook}
           onGoToInvoice={handleGoToInvoiceForBook}
           currentUid={currentUid}
+          hideNominals={hideNominals}
         />
       )}
 
@@ -933,6 +978,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
         <RiwayatInvoiceTab
           books={books}
           onGoToInvoiceTab={handleGoToInvoiceForBook}
+          hideNominals={hideNominals}
         />
       )}
     </div>

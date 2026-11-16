@@ -438,6 +438,17 @@ export function computeDerivedBookFields(
     book.importId = String(raw.importId);
   }
 
+  const rawInvNo =
+    (raw as Record<string, unknown>).noInvoice ??
+    (raw as Record<string, unknown>).nomorInvoice ??
+    (raw as Record<string, unknown>).invoiceNo ??
+    (raw as Record<string, unknown>).invoiceNumber ??
+    (raw as Record<string, unknown>).no_invoice ??
+    (raw as Record<string, unknown>).nomor_invoice;
+  if (rawInvNo !== undefined && rawInvNo !== null && String(rawInvNo).trim() !== '') {
+    book.noInvoice = String(rawInvNo).trim();
+  }
+
   return book;
 }
 

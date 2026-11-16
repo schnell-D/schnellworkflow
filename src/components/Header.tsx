@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, RefreshCw, Settings, LogOut, ChevronDown, User, Bell } from 'lucide-react';
+import { Sun, Moon, RefreshCw, LogOut, ChevronDown, User, Bell } from 'lucide-react';
 import { TabType, AuthUser, BookLog, BookJob } from '../types';
 import { formatLogDateShort } from '../utils/formatters';
+import { APP_VERSION, APP_VERSION_HISTORY } from '../config/appVersion';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -11,7 +12,7 @@ interface HeaderProps {
   onRefresh: () => void;
   isRefreshing: boolean;
   onOpenSettings?: () => void;
-  stuckCount: number;
+  diSayaCount: number;
   newLogsCount?: number;
   urgentNewLogs?: Array<{ log: BookLog; book?: BookJob }>;
   onOpenLogBaru?: () => void;
@@ -27,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
   isRefreshing,
   onOpenSettings,
-  stuckCount,
+  diSayaCount,
   newLogsCount = 0,
   urgentNewLogs = [],
   onOpenLogBaru,
@@ -36,8 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isVersionOpen, setIsVersionOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const versionRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -48,6 +51,9 @@ export const Header: React.FC<HeaderProps> = ({
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
       }
+      if (versionRef.current && !versionRef.current.contains(event.target as Node)) {
+        setIsVersionOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -55,20 +61,51 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="no-print print:hidden sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Brand Zone */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-blue-500/20">
-            S
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
-              Schnell.
-            </span>
-            <span className="inline-flex px-2 py-0.5 text-[11px] font-bold rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-              (Layout)
-            </span>
-          </div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Brand Zone + Version Chip */}
+        <div className="relative flex items-baseline gap-1.5 min-w-0 shrink-0" ref={versionRef}>
+          <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
+            Layout Tracker
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsVersionOpen((prev) => !prev)}
+            aria-expanded={isVersionOpen}
+            aria-label={`Versi aplikasi v${APP_VERSION}, klik untuk lihat riwayat versi`}
+            className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-semibold leading-none bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors shrink-0 tabular-nums cursor-pointer"
+          >
+            v{APP_VERSION}
+          </button>
+
+          {isVersionOpen && (
+            <div className="absolute left-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50">
+              <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  Riwayat Versi
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
+                  v{APP_VERSION}
+                </span>
+              </div>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
+                {APP_VERSION_HISTORY.map((entry) => (
+                  <div key={entry.version} className="px-4 py-2.5 space-y-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tabular-nums">
+                        v{entry.version}
+                      </span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
+                        {entry.date}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
+                      {entry.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Desktop Navigation Links */}
@@ -92,9 +129,9 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <span>Buku</span>
-            {stuckCount > 0 && (
-              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white">
-                {stuckCount}
+            {diSayaCount > 0 && (
+              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white tabular-nums">
+                {diSayaCount}
               </span>
             )}
           </button>

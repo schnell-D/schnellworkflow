@@ -29,7 +29,9 @@ import {
   STATUS_GROUPS,
   StatusGroupKey,
   UKURAN_BUKU_LIST,
+  countBooksDiSaya,
   getStatusGroupMeta,
+  isActiveBookDiSaya,
   isBookDiSaya,
   isStatusSelesai,
   resolveStatusGroup,
@@ -347,7 +349,6 @@ export const BukuTab: React.FC<BukuTabProps> = ({
     let progres = 0;
     let masalah = 0;
     let finish = 0;
-    let diSaya = 0;
 
     books.forEach((b) => {
       const finished = isStatusSelesai(b.statusProgres, statusSelesai);
@@ -359,11 +360,14 @@ export const BukuTab: React.FC<BukuTabProps> = ({
       else if (grp === 'progres') progres++;
       else if (grp === 'masalah') masalah++;
       else if (grp === 'finish') finish++;
-
-      if (isBookDiSaya(b.statusProgres, statusDiSaya)) {
-        diSaya++;
-      }
     });
+
+    const diSaya = countBooksDiSaya(
+      books,
+      statusDiSaya,
+      statusSelesai,
+      statusGroupOverrides
+    );
 
     return { semua, awal, progres, masalah, finish, diSaya };
   }, [books, showSelesai, statusSelesai, statusGroupOverrides, statusDiSaya]);
@@ -415,7 +419,15 @@ export const BukuTab: React.FC<BukuTabProps> = ({
         }
 
         // Quick filter Di Saya
-        if (diSayaOnly && !isBookDiSaya(book.statusProgres, statusDiSaya)) {
+        if (
+          diSayaOnly &&
+          !isActiveBookDiSaya(
+            book.statusProgres,
+            statusDiSaya,
+            statusSelesai,
+            statusGroupOverrides
+          )
+        ) {
           return false;
         }
 

@@ -303,6 +303,46 @@ export function isBookDiSaya(
 }
 
 /**
+ * Cek apakah status buku termasuk posisi "Di Saya" yang masih aktif (bukan Selesai/Finish)
+ */
+export function isActiveBookDiSaya(
+  status: string | undefined | null,
+  statusDiSayaList: readonly string[] = DEFAULT_STATUS_DI_SAYA,
+  statusSelesai: string = DEFAULT_STATUS_SELESAI,
+  groupOverrides?: Record<string, StatusGroupKey>
+): boolean {
+  if (isStatusSelesai(status, statusSelesai)) return false;
+  if (resolveStatusGroup(status, groupOverrides) === 'finish') return false;
+  return isBookDiSaya(status, statusDiSayaList);
+}
+
+/**
+ * Satu sumber kebenaran hitungan jumlah buku di posisi "Di Saya" (tidak termasuk Selesai/Finish).
+ * Dipakai bersama oleh badge tab navigasi Buku dan chip filter "Di Saya".
+ */
+export function countBooksDiSaya(
+  books: readonly { statusProgres?: string | null }[],
+  statusDiSayaList: readonly string[] = DEFAULT_STATUS_DI_SAYA,
+  statusSelesai: string = DEFAULT_STATUS_SELESAI,
+  groupOverrides?: Record<string, StatusGroupKey>
+): number {
+  let count = 0;
+  for (const book of books) {
+    if (
+      isActiveBookDiSaya(
+        book.statusProgres,
+        statusDiSayaList,
+        statusSelesai,
+        groupOverrides
+      )
+    ) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
  * Cek apakah status buku merupakan status selesai akhir (STATUS_SELESAI)
  */
 export function isStatusSelesai(

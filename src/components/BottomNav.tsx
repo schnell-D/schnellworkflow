@@ -5,14 +5,14 @@ import { TabType } from '../types';
 interface BottomNavProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
-  stuckCount: number;
+  diSayaCount: number;
   newLogsCount?: number;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   onTabChange,
-  stuckCount,
+  diSayaCount,
   newLogsCount = 0,
 }) => {
   const tabs: { id: TabType; label: string; icon: React.FC<{ className?: string }> }[] = [
@@ -48,9 +48,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                     isActive ? 'scale-110 stroke-[2.5]' : 'stroke-[1.8]'
                   }`}
                 />
-                {tab.id === 'buku' && stuckCount > 0 && (
-                  <span className="absolute -top-1 -right-2 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
-                    {stuckCount}
+                {tab.id === 'buku' && diSayaCount > 0 && (
+                  <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
+                    {diSayaCount}
                   </span>
                 )}
                 {tab.id === 'log' && newLogsCount > 0 && (

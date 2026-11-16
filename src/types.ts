@@ -72,6 +72,7 @@ export interface BookJob {
   statusBayar: StatusBayarType;
   tglInvoice: string | null; // YYYY-MM-DD atau null
   tglDibayar: string | null; // YYYY-MM-DD atau null
+  noInvoice?: string | null; // Nomor invoice tersimpan (opsional)
   umurPiutang: number; // Hari sejak invoice jika belum dibayar, 0 jika lunas/belum ditagih
   catatanBelumSelesai: string;
   lamaLayoutAwal: number; // Hari
