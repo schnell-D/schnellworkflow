@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,6 +14,8 @@ import {
   ChevronDown,
   MessageSquareText,
   Activity,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { ActivityEntry, BookJob, BookLog, KeuanganSubTab, StatusProgresType, TabType } from '../types';
 import {
@@ -65,6 +67,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onSelectBook,
   onQuickStatusChange,
 }) => {
+  const [hideNominals, setHideNominals] = useState<boolean>(true);
   const availableMonths = getAvailableMonths(books);
   const metrics = computeDashboardMetrics(books, selectedMonth);
   const weeklyData = computeWeeklyComparison(books, selectedMonth);
@@ -156,6 +159,12 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     }
   };
 
+  const displayNominal = (amount: number, short = false) =>
+    hideNominals ? 'Rp •••' : short ? formatRupiahShort(amount) : formatRupiah(amount);
+
+  const renderAttentionMetric = (label: string) =>
+    hideNominals && label.startsWith('Rp') ? 'Rp •••' : label;
+
   return (
     <div className="space-y-5">
       {/* 1. Header 1 Baris (Inline di kanan tanpa kartu terpisah; menumpuk rapi di HP) */}
@@ -206,6 +215,27 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             }`}
           >
             Semua
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setHideNominals((prev) => !prev)}
+            aria-pressed={hideNominals}
+            aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+            className="min-w-[44px] min-h-[44px] sm:min-h-[38px] px-2.5 md:px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 text-xs font-bold shrink-0 transition-colors duration-150 motion-reduce:transition-none shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+          >
+            {hideNominals ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                <span className="hidden md:inline">Tampilkan</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 text-[#2F6BDE] dark:text-blue-400" />
+                <span className="hidden md:inline">Sembunyikan</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -275,10 +305,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div className="min-w-0 w-full">
             <span className="sm:hidden text-lg font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white block truncate">
-              {formatRupiahShort(metrics.ditagihNominal)}
+              {displayNominal(metrics.ditagihNominal, true)}
             </span>
             <span className="hidden sm:block text-sm lg:text-[15px] font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white truncate">
-              {formatRupiah(metrics.ditagihNominal)}
+              {displayNominal(metrics.ditagihNominal)}
             </span>
           </div>
         </button>
@@ -300,10 +330,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div className="min-w-0 w-full">
             <span className="sm:hidden text-lg font-extrabold tracking-tight tabular-nums text-[#1A9E7A] dark:text-emerald-400 block truncate">
-              {formatRupiahShort(metrics.dibayarNominal)}
+              {displayNominal(metrics.dibayarNominal, true)}
             </span>
             <span className="hidden sm:block text-sm lg:text-[15px] font-extrabold tracking-tight tabular-nums text-[#1A9E7A] dark:text-emerald-400 truncate">
-              {formatRupiah(metrics.dibayarNominal)}
+              {displayNominal(metrics.dibayarNominal)}
             </span>
           </div>
         </button>
@@ -325,10 +355,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div className="min-w-0 w-full">
             <span className="sm:hidden text-lg font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white block truncate">
-              {formatRupiahShort(metrics.belumDitagihNominal)}
+              {displayNominal(metrics.belumDitagihNominal, true)}
             </span>
             <span className="hidden sm:block text-sm lg:text-[15px] font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white truncate">
-              {formatRupiah(metrics.belumDitagihNominal)}
+              {displayNominal(metrics.belumDitagihNominal)}
             </span>
           </div>
         </button>
@@ -479,7 +509,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <span className="text-xs font-bold tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      {metricLabel}
+                      {renderAttentionMetric(metricLabel)}
                     </span>
 
                     {/* Ganti status cepat satu ketukan langsung dari baris Perlu Perhatian */}
