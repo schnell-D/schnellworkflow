@@ -38,6 +38,8 @@ interface KeuanganTabProps {
   onSubTabChange?: (subTab: KeuanganSubTab) => void;
   onSelectInvoiceBookId?: (bookId: number) => void;
   currentUid?: string;
+  hideNominals?: boolean;
+  onToggleHideNominals?: () => void;
 }
 
 interface KeuanganRingkasanProps {
@@ -826,13 +828,18 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   onSubTabChange,
   onSelectInvoiceBookId,
   currentUid,
+  hideNominals: hideNominalsProp,
+  onToggleHideNominals,
 }) => {
   const [internalSubTab, setInternalSubTab] = useState<KeuanganSubTab>(activeSubTab);
   const [internalInvoiceBookId, setInternalInvoiceBookId] = useState<number | null>(
     selectedInvoiceBookId || null
   );
-  // Default tersembunyi setiap kali tab Keuangan dibuka (pilihan terakhir tidak disimpan)
-  const [hideNominals, setHideNominals] = useState<boolean>(true);
+  // Default tersembunyi bila tidak dikontrol dari App (pilihan terakhir tidak disimpan)
+  const [localHideNominals, setLocalHideNominals] = useState<boolean>(true);
+  const hideNominals = hideNominalsProp ?? localHideNominals;
+  const handleToggleHideNominals =
+    onToggleHideNominals ?? (() => setLocalHideNominals((prev) => !prev));
 
   useEffect(() => {
     if (activeSubTab) {
@@ -880,7 +887,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
           {/* Tombol Mata di HP */}
           <button
             type="button"
-            onClick={() => setHideNominals((prev) => !prev)}
+            onClick={handleToggleHideNominals}
             aria-pressed={hideNominals}
             aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
             title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
@@ -935,7 +942,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
 
           <button
             type="button"
-            onClick={() => setHideNominals((prev) => !prev)}
+            onClick={handleToggleHideNominals}
             aria-pressed={hideNominals}
             aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
             title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}

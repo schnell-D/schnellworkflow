@@ -200,6 +200,8 @@ export default function App() {
 
   const [initialStatusFilter, setInitialStatusFilter] = useState<string | null>(null);
   const [selectedInvoiceBookId, setSelectedInvoiceBookId] = useState<number | null>(null);
+  // Pengaturan tunggal Tampilkan/Sembunyikan nominal untuk Dashboard & Keuangan (bawaan tersembunyi)
+  const [hideNominals, setHideNominals] = useState<boolean>(true);
 
   // Modal Tambah Buku & Impor Data (CSV / Google Sheet / Log / Workbook)
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState<boolean>(false);
@@ -454,6 +456,7 @@ export default function App() {
     }
     setError(null);
     setSavedNotice(null);
+    setHideNominals(true);
     dismissStatusUndoToast();
     dismissLogStatusUndoToast();
   };
@@ -1033,6 +1036,8 @@ export default function App() {
                   onQuickStatusChange={(book, nextStatus) => {
                     void handleQuickStatusChange(book, nextStatus);
                   }}
+                  hideNominals={hideNominals}
+                  onToggleHideNominals={() => setHideNominals((prev) => !prev)}
                 />
               )
             )}
@@ -1086,6 +1091,8 @@ export default function App() {
                 }}
                 onSelectInvoiceBookId={(id) => setSelectedInvoiceBookId(id)}
                 currentUid={currentUser.uid}
+                hideNominals={hideNominals}
+                onToggleHideNominals={() => setHideNominals((prev) => !prev)}
               />
             )}
 

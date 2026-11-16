@@ -49,6 +49,8 @@ interface DashboardTabProps {
   onFilterStatusFromChart?: (status: string) => void;
   onSelectBook?: (book: BookJob) => void;
   onQuickStatusChange?: (book: BookJob, nextStatus: StatusProgresType) => void;
+  hideNominals?: boolean;
+  onToggleHideNominals?: () => void;
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -66,8 +68,13 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onFilterStatusFromChart,
   onSelectBook,
   onQuickStatusChange,
+  hideNominals: hideNominalsProp,
+  onToggleHideNominals,
 }) => {
-  const [hideNominals, setHideNominals] = useState<boolean>(true);
+  const [localHideNominals, setLocalHideNominals] = useState<boolean>(true);
+  const hideNominals = hideNominalsProp ?? localHideNominals;
+  const handleToggleHideNominals =
+    onToggleHideNominals ?? (() => setLocalHideNominals((prev) => !prev));
   const availableMonths = getAvailableMonths(books);
   const metrics = computeDashboardMetrics(books, selectedMonth);
   const weeklyData = computeWeeklyComparison(books, selectedMonth);
@@ -219,7 +226,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
           <button
             type="button"
-            onClick={() => setHideNominals((prev) => !prev)}
+            onClick={handleToggleHideNominals}
             aria-pressed={hideNominals}
             aria-label={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
             title={hideNominals ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
