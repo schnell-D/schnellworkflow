@@ -238,27 +238,35 @@ export interface ParsedKodeCatatan {
 
 /**
  * Parser KODE_CATATAN:
- * Pola: ^([PENSCK-])/([PRTMI-])\s*:\s*(.+)$ (case-insensitive)
+ * Format: "DariJenis // isi" atau "Dari // isi" (case-insensitive, spasi di sekitar // opsional)
+ * Huruf pertama = Dari (P=Penulis, E=Editor, N=Penerbit, S=Saya, C=Coped, K=Korektor, -=kosong)
+ * Huruf kedua = Jenis (P=Pertanyaan, R=Revisi, T=Tambahan naskah, M=Masalah, I=Info, -=Info)
+ * Jika hanya 1 huruf sebelum //, dianggap Dari dengan Jenis Info.
+ * Jika tanpa // (atau kode tidak cocok), seluruh teks menjadi isi dengan Dari "" dan Jenis "Info".
  * Contoh:
- * - "E/R: baru masuk koreksi 1" -> dari "Editor", jenis "Revisi", isi "baru masuk koreksi 1"
- * - "S/M: kelengkapan belum ada" -> dari "Saya", jenis "Masalah"
- * - "N/I: ganti judul" -> dari "Penerbit", jenis "Info"
- * - "-/P: footnote ganda, dibiarkan?" -> dari "", jenis "Pertanyaan"
+ * - "ER // baru masuk koreksi 1" -> dari "Editor", jenis "Revisi", isi "baru masuk koreksi 1"
+ * - "SM//kelengkapan belum ada" -> dari "Saya", jenis "Masalah"
+ * - "P // teks" -> dari "Penulis", jenis "Info"
+ * - "-P // footnote ganda, dibiarkan?" -> dari "", jenis "Pertanyaan"
  * - "antri coped" -> dari "", jenis "Info", isi "antri coped"
  */
 export function parseKodeCatatan(rawText: string): ParsedKodeCatatan {
   const trimmed = String(rawText || '').trim();
-  const match = trimmed.match(/^([PENSCK-])\/([PRTMI-])\s*:\s*(.+)$/i);
-  if (match) {
-    const dariCode = match[1].toUpperCase();
-    const jenisCode = match[2].toUpperCase();
-    const isi = match[3].trim();
-    return {
-      dari: KODE_DARI_MAP[dariCode] ?? '',
-      jenis: KODE_JENIS_MAP[jenisCode] ?? 'Info',
-      isi,
-      matchedCode: true,
-    };
+  const sepIndex = trimmed.indexOf('//');
+  if (sepIndex !== -1) {
+    const codePart = trimmed.slice(0, sepIndex).trim();
+    const isiPart = trimmed.slice(sepIndex + 2).trim();
+    const match = codePart.match(/^([PENSCK-])([PRTMI-])?$/i);
+    if (match) {
+      const dariCode = match[1].toUpperCase();
+      const jenisCode = match[2] ? match[2].toUpperCase() : '-';
+      return {
+        dari: KODE_DARI_MAP[dariCode] ?? '',
+        jenis: KODE_JENIS_MAP[jenisCode] ?? 'Info',
+        isi: isiPart,
+        matchedCode: true,
+      };
+    }
   }
   return {
     dari: '',

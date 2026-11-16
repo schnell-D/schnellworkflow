@@ -2065,7 +2065,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                       type="text"
                       value={quickLogInput}
                       onChange={(e) => setQuickLogInput(e.target.value)}
-                      placeholder="Ketik cepat, mis. E/R: baru masuk koreksi 1"
+                      placeholder="Ketik cepat, mis. ER // baru masuk koreksi 1"
                       disabled={isQuickSubmitting || !onCreateBookLog}
                       className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -2111,7 +2111,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                     </div>
                   ) : (
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 px-0.5">
-                      Kode cepat: Dari (P=Penulis, E=Editor, N=Penerbit, S=Saya, C=Coped, K=Korektor, -=kosong) / Jenis (P=Pertanyaan, R=Revisi, T=Tambahan naskah, M=Masalah, I=Info)
+                      Kode cepat: DariJenis // isi (mis. ER // koreksi 1, P // teks) — Dari (P=Penulis, E=Editor, N=Penerbit, S=Saya, C=Coped, K=Korektor, -=kosong) · Jenis (P=Pertanyaan, R=Revisi, T=Tambahan naskah, M=Masalah, I=Info, -=Info)
                     </p>
                   )}
                 </form>
