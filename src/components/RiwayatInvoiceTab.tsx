@@ -5,23 +5,34 @@ import {
   Check,
   Search,
   Receipt,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
 } from 'lucide-react';
-import { BookJob } from '../types';
-import { getAvailableMonths } from '../utils/analytics';
-import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { ActivityEntry, BookJob, BookLog } from '../types';
+import { getAvailableMonths, MonthOption } from '../utils/analytics';
+import { formatRupiah, formatDateIndo, getMonthNameIndo } from '../utils/formatters';
 import {
+  CompletionDateResolveOptions,
   InvoiceGroup,
   bookMatchesMonthFilter,
   bookMatchesSearchFilter,
   buildInvoiceHistorySections,
   groupMatchesMonthFilter,
   groupMatchesSearchFilter,
+  isBookCompletedStatus,
+  resolveBookCompletionDate,
 } from '../utils/invoiceHistoryHelpers';
 
 interface RiwayatInvoiceTabProps {
   books: BookJob[];
+  onSelectBook?: (book: BookJob) => void;
   onGoToInvoiceTab?: (bookId: number) => void;
   hideNominals?: boolean;
+  activity?: ActivityEntry[];
+  logs?: BookLog[];
+  statusSelesai?: string;
 }
 
 type RiwayatStatusFilter = 'Semua' | 'Belum Ditagih' | 'Belum Dibayar' | 'Lunas';
@@ -35,40 +46,82 @@ const FILTER_OPTIONS: readonly RiwayatStatusFilter[] = [
 
 export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
   books,
+  onSelectBook,
   hideNominals = true,
+  activity,
+  logs,
+  statusSelesai,
 }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<RiwayatStatusFilter>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isMissingDateExpanded, setIsMissingDateExpanded] = useState(false);
 
-  // Hanya buku berstatus "Selesai" yang tampil di riwayat invoice
+  const completionDateOptions = useMemo<CompletionDateResolveOptions>(
+    () => ({ activity, logs, statusSelesai }),
+    [activity, logs, statusSelesai]
+  );
+
+  // Hanya buku berstatus "Selesai" / "Finish" yang tampil di riwayat invoice
   const finishedBooks = useMemo(() => {
-    return books.filter((b) => b.statusProgres === 'Selesai');
-  }, [books]);
+    return books.filter((b) => isBookCompletedStatus(b.statusProgres, statusSelesai));
+  }, [books, statusSelesai]);
+
+  const booksWithoutCompletionDate = useMemo(() => {
+    return finishedBooks.filter(
+      (b) => !resolveBookCompletionDate(b, completionDateOptions)
+    );
+  }, [finishedBooks, completionDateOptions]);
 
   const monthOptions = useMemo(() => {
-    return getAvailableMonths(finishedBooks);
-  }, [finishedBooks]);
+    const base = getAvailableMonths(finishedBooks);
+    const monthMap = new Map<string, MonthOption>(base.map((m) => [m.key, m]));
+    finishedBooks.forEach((b) => {
+      const compDate = resolveBookCompletionDate(b, completionDateOptions);
+      if (compDate && /^\d{4}-\d{2}/.test(compDate)) {
+        const key = compDate.substring(0, 7);
+        if (!monthMap.has(key)) {
+          const year = parseInt(key.substring(0, 4), 10);
+          const month = parseInt(key.substring(5, 7), 10);
+          if (year >= 2000 && month >= 1 && month <= 12) {
+            monthMap.set(key, {
+              key,
+              label: `${getMonthNameIndo(month - 1)} ${year}`,
+              year,
+              month,
+            });
+          }
+        }
+      }
+    });
+    return Array.from(monthMap.values()).sort((a, b) => a.key.localeCompare(b.key));
+  }, [finishedBooks, completionDateOptions]);
 
   // Pengelompokan utama berdasarkan nomor invoice yang sudah tersimpan di data
   const sections = useMemo(() => {
-    return buildInvoiceHistorySections(finishedBooks);
-  }, [finishedBooks]);
+    return buildInvoiceHistorySections(finishedBooks, completionDateOptions);
+  }, [finishedBooks, completionDateOptions]);
 
   // Terapkan filter periode bulan & pencarian (tanpa statusFilter, agar semua 5 kartu ringkasan tetap akurat)
   const periodAndSearchFiltered = useMemo(() => {
     const belumDitagih = sections.belumDitagih.filter(
-      (b) => bookMatchesMonthFilter(b, selectedMonth) && bookMatchesSearchFilter(b, searchQuery)
+      (b) =>
+        bookMatchesMonthFilter(b, selectedMonth, completionDateOptions) &&
+        bookMatchesSearchFilter(b, searchQuery)
     );
     const belumDibayar = sections.belumDibayar.filter(
-      (g) => groupMatchesMonthFilter(g, selectedMonth) && groupMatchesSearchFilter(g, searchQuery)
+      (g) =>
+        groupMatchesMonthFilter(g, selectedMonth, completionDateOptions) &&
+        groupMatchesSearchFilter(g, searchQuery)
     );
     const lunas = sections.lunas.filter(
-      (g) => groupMatchesMonthFilter(g, selectedMonth) && groupMatchesSearchFilter(g, searchQuery)
+      (g) =>
+        groupMatchesMonthFilter(g, selectedMonth, completionDateOptions) &&
+        groupMatchesSearchFilter(g, searchQuery)
     );
     return { belumDitagih, belumDibayar, lunas };
-  }, [sections, selectedMonth, searchQuery]);
+  }, [sections, selectedMonth, searchQuery, completionDateOptions]);
 
   // Hitungan untuk 5 kartu ringkasan berurutan:
   // 1. Buku Selesai, 2. Total Nilai Jasa, 3. Belum Ditagih, 4. Belum Dibayar, 5. Lunas
@@ -184,7 +237,7 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
       } else {
         periodAndSearchFiltered.belumDitagih.forEach((b, idx) => {
           textLines.push(
-            `${idx + 1}. *${b.judul}* — ${b.penulis} | Selesai: ${formatDateIndo(b.tglSelesaiLayout)} | *${formatRupiah(b.nilaiJasa)}*`
+            `${idx + 1}. *${b.judul}* — ${b.penulis} | Selesai: ${formatDateIndo(resolveBookCompletionDate(b, completionDateOptions))} | *${formatRupiah(b.nilaiJasa)}*`
           );
         });
       }
@@ -595,6 +648,56 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
         </div>
       </div>
 
+      {/* Peringatan buku selesai yang belum punya tanggal selesai (sembunyi jika N = 0) */}
+      {booksWithoutCompletionDate.length > 0 && (
+        <div className="no-print print:hidden rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/25 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setIsMissingDateExpanded((prev) => !prev)}
+            aria-expanded={isMissingDateExpanded}
+            className="w-full min-h-[44px] px-4 py-2.5 flex items-center justify-between gap-2 text-left hover:bg-amber-100/50 dark:hover:bg-amber-900/25 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate">
+                {booksWithoutCompletionDate.length} buku selesai belum punya tanggal selesai
+              </span>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 inline-flex items-center gap-1 shrink-0">
+              <span>{isMissingDateExpanded ? 'Tutup' : 'Lihat'}</span>
+              {isMissingDateExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </span>
+          </button>
+
+          {isMissingDateExpanded && (
+            <div className="border-t border-amber-200/80 dark:border-amber-900/50 divide-y divide-amber-200/60 dark:divide-amber-900/40 bg-white/70 dark:bg-slate-900/50 max-h-64 overflow-y-auto">
+              {booksWithoutCompletionDate.map((book, idx) => (
+                <button
+                  key={`missing-date-${book.id || book.no}-${idx}`}
+                  type="button"
+                  onClick={() => onSelectBook?.(book)}
+                  className="w-full min-h-[44px] px-4 py-2 text-left flex items-center justify-between gap-3 hover:bg-amber-50/80 dark:hover:bg-slate-800/70 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                      {book.judul}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {book.penulis}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 2. Konten Tabel Riwayat Bersih (Tanpa header Schnell, blok periode, catatan, maupun tanda tangan) */}
       <div className="printable-report bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-8 print:shadow-none print:border-none print:rounded-none print:p-0 print:bg-white print:text-slate-900">
         {/* Judul ringkas khusus saat cetak A4 */}
@@ -664,7 +767,9 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
                             {book.penulis}
                           </td>
                           <td className="py-2.5 px-3 text-center text-slate-600 dark:text-slate-300 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top">
-                            {formatDateIndo(book.tglSelesaiLayout)}
+                            {formatDateIndo(
+                              resolveBookCompletionDate(book, completionDateOptions)
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-right font-extrabold text-slate-900 dark:text-white tabular-nums whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top">
                             {renderNominal(book.nilaiJasa)}
@@ -690,7 +795,10 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
                       </div>
                       <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
                         <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Selesai: {formatDateIndo(book.tglSelesaiLayout)}
+                          Selesai:{' '}
+                          {formatDateIndo(
+                            resolveBookCompletionDate(book, completionDateOptions)
+                          )}
                         </span>
                         <span className="font-extrabold text-slate-900 dark:text-white tabular-nums">
                           {renderNominal(book.nilaiJasa)}

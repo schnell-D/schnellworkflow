@@ -63,6 +63,7 @@ export interface BookJob {
   statusProgres: StatusProgresType;
   tglTerima: string | null; // YYYY-MM-DD atau null
   tglSelesaiLayout: string | null; // YYYY-MM-DD atau null
+  tglSelesai?: string | null; // Field tanggal selesai buku tersimpan (opsional, read-only)
   updateTerakhir: string | null; // YYYY-MM-DD atau null
   hariBerjalan: number;
   halamanAwal: number;

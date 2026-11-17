@@ -20,13 +20,17 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import { BookJob } from '../types';
+import { ActivityEntry, BookJob, BookLog } from '../types';
 import {
   formatRupiah,
   formatDateIndo,
   angkaTerbilang,
   getInvoiceNumber,
 } from '../utils/formatters';
+import {
+  isBookCompletedStatus,
+  resolveBookCompletionDate,
+} from '../utils/invoiceHistoryHelpers';
 
 export interface BookExtraFee {
   id: string;
@@ -37,13 +41,22 @@ export interface BookExtraFee {
 interface InvoiceTabProps {
   books: BookJob[];
   selectedBookId?: number | null;
+  activity?: ActivityEntry[];
+  logs?: BookLog[];
+  statusSelesai?: string;
 }
 
-export const InvoiceTab: React.FC<InvoiceTabProps> = ({ books, selectedBookId }) => {
+export const InvoiceTab: React.FC<InvoiceTabProps> = ({
+  books,
+  selectedBookId,
+  activity,
+  logs,
+  statusSelesai,
+}) => {
   // 1. Saring HANYA BUKU YANG SUDAH SELESAI
   const finishedBooks = useMemo(() => {
-    return books.filter((b) => b.statusProgres === 'Selesai');
-  }, [books]);
+    return books.filter((b) => isBookCompletedStatus(b.statusProgres, statusSelesai));
+  }, [books, statusSelesai]);
 
   // ID buku yang dipilih untuk di-invoice
   const [selectedBookIds, setSelectedBookIds] = useState<number[]>(() => {
@@ -816,7 +829,13 @@ export const InvoiceTab: React.FC<InvoiceTabProps> = ({ books, selectedBookId })
                         {currentTask}
                       </td>
                       <td className="py-3 px-2 text-center text-slate-600 whitespace-nowrap">
-                        {formatDateIndo(book.tglSelesaiLayout)}
+                        {formatDateIndo(
+                          resolveBookCompletionDate(book, {
+                            activity,
+                            logs,
+                            statusSelesai,
+                          })
+                        )}
                       </td>
                       <td className="py-3 px-3">
                         {/* Judul Buku & Penulis */}

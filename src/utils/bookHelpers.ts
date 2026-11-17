@@ -438,13 +438,31 @@ export function computeDerivedBookFields(
     book.importId = String(raw.importId);
   }
 
+  const rawObj = raw as Record<string, unknown>;
+  const rawTglSelesai =
+    rawObj.tglSelesai ??
+    rawObj.tanggalSelesai ??
+    rawObj.tglSelesaiBuku ??
+    rawObj.tanggalSelesaiBuku ??
+    rawObj.tglFinish ??
+    rawObj.tanggalFinish ??
+    rawObj.finishDate ??
+    rawObj.completedAt ??
+    rawObj.selesaiAt ??
+    rawObj.finishedAt ??
+    rawObj.tglSelesaiFinish;
+  const resolvedTglSelesai = normalizeIsoDate(rawTglSelesai).value;
+  if (resolvedTglSelesai) {
+    book.tglSelesai = resolvedTglSelesai;
+  }
+
   const rawInvNo =
-    (raw as Record<string, unknown>).noInvoice ??
-    (raw as Record<string, unknown>).nomorInvoice ??
-    (raw as Record<string, unknown>).invoiceNo ??
-    (raw as Record<string, unknown>).invoiceNumber ??
-    (raw as Record<string, unknown>).no_invoice ??
-    (raw as Record<string, unknown>).nomor_invoice;
+    rawObj.noInvoice ??
+    rawObj.nomorInvoice ??
+    rawObj.invoiceNo ??
+    rawObj.invoiceNumber ??
+    rawObj.no_invoice ??
+    rawObj.nomor_invoice;
   if (rawInvNo !== undefined && rawInvNo !== null && String(rawInvNo).trim() !== '') {
     book.noInvoice = String(rawInvNo).trim();
   }
@@ -479,6 +497,10 @@ export function serializeBookForFirestore(book: Partial<BookJob>): Record<string
     tglDibayar: normalizeIsoDate(book.tglDibayar).value,
     catatanBelumSelesai: String(book.catatanBelumSelesai ?? ''),
   };
+
+  if (book.tglSelesai !== undefined) {
+    payload.tglSelesai = normalizeIsoDate(book.tglSelesai).value;
+  }
 
   if (book.ukuran !== undefined || book.ukuranBuku !== undefined) {
     const cleanUkuran = (book.ukuran ?? book.ukuranBuku)
@@ -564,6 +586,7 @@ export function sanitizeBookUpdatesForFirestore(updates: Partial<BookJob>): Reco
   }
   if ('tglTerima' in updates) payload.tglTerima = normalizeIsoDate(updates.tglTerima).value;
   if ('tglSelesaiLayout' in updates) payload.tglSelesaiLayout = normalizeIsoDate(updates.tglSelesaiLayout).value;
+  if ('tglSelesai' in updates) payload.tglSelesai = normalizeIsoDate(updates.tglSelesai).value;
   if ('updateTerakhir' in updates) payload.updateTerakhir = normalizeIsoDate(updates.updateTerakhir).value;
   if ('halamanAwal' in updates) payload.halamanAwal = toFiniteNumber(updates.halamanAwal, 0);
   if ('halamanFinal' in updates) payload.halamanFinal = toFiniteNumber(updates.halamanFinal, 0);

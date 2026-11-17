@@ -22,6 +22,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import {
+  ActivityEntry,
   BookJob,
   BookLog,
   LogJenisType,
@@ -58,11 +59,14 @@ import {
   STATUS_GROUPS,
   StatusGroupKey,
   UKURAN_BUKU_LIST,
-  isStatusSelesai,
   parseKodeCatatan,
   resolveStatusGroup,
 } from '../config/masterData';
 import { sortLogsLatestFirst } from '../utils/logHelpers';
+import {
+  isBookCompletedStatus,
+  resolveBookCompletionDate,
+} from '../utils/invoiceHistoryHelpers';
 import { LogFormModal } from './LogFormModal';
 
 export type DetailTabType = 'progres' | 'naskah' | 'produksi' | 'catatan';
@@ -70,6 +74,7 @@ export type DetailTabType = 'progres' | 'naskah' | 'produksi' | 'catatan';
 interface BookDetailPageProps {
   book: BookJob | null;
   bookLogs?: BookLog[];
+  activity?: ActivityEntry[];
   customStatuses?: string[];
   statusGroupOverrides?: Record<string, StatusGroupKey>;
   statusSelesai?: string;
@@ -106,6 +111,7 @@ function normalizeCheckedItems(raw?: string[]): string[] {
 export const BookDetailPage: React.FC<BookDetailPageProps> = ({
   book,
   bookLogs = [],
+  activity = [],
   customStatuses = [],
   statusGroupOverrides = {},
   statusSelesai = DEFAULT_STATUS_SELESAI,
@@ -241,6 +247,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveErrorText, setSaveErrorText] = useState<string | null>(null);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
+  const [isSavingTglSelesai, setIsSavingTglSelesai] = useState(false);
 
   const availableStatuses = useMemo(
     () => buildCombinedStatusList(customStatuses),
@@ -428,6 +435,15 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     return computeDaysInStatus(book);
   }, [book]);
 
+  const resolvedCompletionDate = useMemo(() => {
+    if (!book) return null;
+    return resolveBookCompletionDate(book, {
+      activity,
+      logs: bookLogs,
+      statusSelesai,
+    });
+  }, [book, activity, bookLogs, statusSelesai]);
+
   const timelineStages = useMemo(() => {
     const isSelesai = draftStatusProgres === 'Selesai';
     const isReadyPrint = draftStatusProgres === 'Sudah siap cetak' || isSelesai;
@@ -561,8 +577,8 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
         statusProgres: nextStatus,
         updateTerakhir: today,
       };
-      if (isStatusSelesai(nextStatus, statusSelesai) && !book.tglSelesaiLayout) {
-        updates.tglSelesaiLayout = today;
+      if (isBookCompletedStatus(nextStatus, statusSelesai) && !book.tglSelesai) {
+        updates.tglSelesai = today;
       }
       ok = await onUpdateBook(book, updates);
     }
@@ -573,6 +589,23 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       setDraftStatusProgres(prevStatus);
       setSaveState('error');
       setSaveErrorText('Gagal mengubah status buku di Firestore. Periksa koneksi lalu coba lagi.');
+    }
+  };
+
+  const handleChangeTglSelesai = async (nextValue: string) => {
+    if (!book || isSavingTglSelesai) return;
+    const cleaned = nextValue.trim();
+    const targetVal = cleaned || null;
+    setIsSavingTglSelesai(true);
+    setSaveState('saving');
+    setSaveErrorText(null);
+    const ok = await onUpdateBook(book, { tglSelesai: targetVal });
+    setIsSavingTglSelesai(false);
+    if (ok) {
+      setSaveState('saved');
+    } else {
+      setSaveState('error');
+      setSaveErrorText('Gagal menyimpan tanggal selesai ke Firestore. Silakan coba lagi.');
     }
   };
 
@@ -754,8 +787,12 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       updates.updateTerakhir = today;
     }
 
-    if (isStatusSelesai(draftStatusProgres, statusSelesai) && !book.tglSelesaiLayout) {
-      updates.tglSelesaiLayout = today;
+    if (
+      statusChanged &&
+      isBookCompletedStatus(draftStatusProgres, statusSelesai) &&
+      !book.tglSelesai
+    ) {
+      updates.tglSelesai = today;
     }
 
     const ok = await onUpdateBook(book, updates);
@@ -983,6 +1020,41 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
               <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
                 Update: {formatDateIndo(book.updateTerakhir)}
               </span>
+
+              {isBookCompletedStatus(draftStatusProgres, statusSelesai) && (
+                <div className="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1">
+                  <label
+                    htmlFor="detail-tgl-selesai"
+                    className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block"
+                  >
+                    Tgl Selesai
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      id="detail-tgl-selesai"
+                      type="date"
+                      value={resolvedCompletionDate || ''}
+                      disabled={isSavingTglSelesai}
+                      onChange={(e) => {
+                        void handleChangeTglSelesai(e.target.value);
+                      }}
+                      className="flex-1 min-w-0 min-h-[38px] px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {book.tglSelesai && (
+                      <button
+                        type="button"
+                        disabled={isSavingTglSelesai}
+                        onClick={() => {
+                          void handleChangeTglSelesai('');
+                        }}
+                        className="min-h-[38px] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 shrink-0 transition-colors"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Lama di Status Ini */}

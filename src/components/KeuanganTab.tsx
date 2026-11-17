@@ -15,7 +15,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { BookJob, KeuanganSubTab, PaketType } from '../types';
+import { ActivityEntry, BookJob, BookLog, KeuanganSubTab, PaketType } from '../types';
 import {
   computePaketSummary,
   computeMonthlyIncome,
@@ -40,6 +40,9 @@ interface KeuanganTabProps {
   currentUid?: string;
   hideNominals?: boolean;
   onToggleHideNominals?: () => void;
+  activity?: ActivityEntry[];
+  logs?: BookLog[];
+  statusSelesai?: string;
 }
 
 interface KeuanganRingkasanProps {
@@ -830,6 +833,9 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   currentUid,
   hideNominals: hideNominalsProp,
   onToggleHideNominals,
+  activity,
+  logs,
+  statusSelesai,
 }) => {
   const [internalSubTab, setInternalSubTab] = useState<KeuanganSubTab>(activeSubTab);
   const [internalInvoiceBookId, setInternalInvoiceBookId] = useState<number | null>(
@@ -978,14 +984,21 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
         <InvoiceTab
           books={books}
           selectedBookId={internalInvoiceBookId}
+          activity={activity}
+          logs={logs}
+          statusSelesai={statusSelesai}
         />
       )}
 
       {internalSubTab === 'riwayat' && (
         <RiwayatInvoiceTab
           books={books}
+          onSelectBook={onSelectBook}
           onGoToInvoiceTab={handleGoToInvoiceForBook}
           hideNominals={hideNominals}
+          activity={activity}
+          logs={logs}
+          statusSelesai={statusSelesai}
         />
       )}
     </div>

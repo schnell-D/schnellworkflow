@@ -65,6 +65,7 @@ import {
   getTodayIsoDate,
 } from './utils/bookHelpers';
 import { countBooksDiSaya } from './config/masterData';
+import { isBookCompletedStatus } from './utils/invoiceHistoryHelpers';
 import {
   downloadTemplateXlsx,
 } from './utils/sheetHelpers';
@@ -139,6 +140,7 @@ export default function App() {
     prevStatusProgres: StatusProgresType;
     prevUpdateTerakhir: string | null;
     prevTglSelesaiLayout: string | null;
+    prevTglSelesai?: string | null;
   }
   const [statusUndoToast, setStatusUndoToast] = useState<StatusUndoToast | null>(null);
   const statusToastTimerRef = useRef<number | null>(null);
@@ -491,11 +493,12 @@ export default function App() {
       finalUpdates.updateTerakhir = today;
     }
     if (
-      finalUpdates.statusProgres === 'Selesai' &&
-      !targetBook.tglSelesaiLayout &&
-      !finalUpdates.tglSelesaiLayout
+      statusChanged &&
+      isBookCompletedStatus(finalUpdates.statusProgres, cloudProfileData?.statusSelesai) &&
+      !targetBook.tglSelesai &&
+      !('tglSelesai' in finalUpdates)
     ) {
-      finalUpdates.tglSelesaiLayout = today;
+      finalUpdates.tglSelesai = today;
     }
 
     const previousBooks = books;
@@ -543,6 +546,7 @@ export default function App() {
       prevStatusProgres: targetBook.statusProgres,
       prevUpdateTerakhir: targetBook.updateTerakhir,
       prevTglSelesaiLayout: targetBook.tglSelesaiLayout,
+      prevTglSelesai: targetBook.tglSelesai ?? null,
     };
 
     const today = getTodayIsoDate();
@@ -550,8 +554,11 @@ export default function App() {
       statusProgres: nextStatus,
       updateTerakhir: today,
     };
-    if (nextStatus === 'Selesai' && !targetBook.tglSelesaiLayout) {
-      updates.tglSelesaiLayout = today;
+    if (
+      isBookCompletedStatus(nextStatus, cloudProfileData?.statusSelesai) &&
+      !targetBook.tglSelesai
+    ) {
+      updates.tglSelesai = today;
     }
 
     const ok = await handleUpdateBook(targetBook, updates);
@@ -582,7 +589,7 @@ export default function App() {
     await handleUpdateBook(targetBook, {
       statusProgres: snapshot.prevStatusProgres,
       updateTerakhir: snapshot.prevUpdateTerakhir,
-      tglSelesaiLayout: snapshot.prevTglSelesaiLayout,
+      tglSelesai: snapshot.prevTglSelesai ?? null,
     });
   };
 
@@ -1093,6 +1100,9 @@ export default function App() {
                 currentUid={currentUser.uid}
                 hideNominals={hideNominals}
                 onToggleHideNominals={() => setHideNominals((prev) => !prev)}
+                activity={activity}
+                logs={logs}
+                statusSelesai={cloudProfileData?.statusSelesai}
               />
             )}
 
@@ -1200,6 +1210,8 @@ export default function App() {
                 )
               : []
           }
+          activity={activity}
+          statusSelesai={cloudProfileData?.statusSelesai}
           customStatuses={customStatuses}
           isLoading={loading && books.length === 0}
           initialTab={detailTab}
