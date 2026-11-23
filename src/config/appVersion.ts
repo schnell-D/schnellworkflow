@@ -10,12 +10,17 @@ export interface AppVersionEntry {
  * - "Besar:" menaikkan angka depan dan mereset angka belakang ke 0 (mis. 1.0 -> 2.0)
  * - "Kecil:" menaikkan angka belakang saja (mis. 1.0 -> 1.1 -> 1.2)
  */
-export const APP_VERSION = '2.2';
+export const APP_VERSION = '2.3';
 
 /**
  * Riwayat versi aplikasi (diurutkan dari terbaru ke terlama).
  */
 export const APP_VERSION_HISTORY: readonly AppVersionEntry[] = [
+  {
+    version: '2.3',
+    date: '23 Nov 2026',
+    description: 'Perbaiki tata letak cetak/PDF pada Cetak Invoice & Cetak Rekap A4 agar total hanya sekali di akhir dan baris buku tidak terpotong',
+  },
   {
     version: '2.2',
     date: '17 Nov 2026',

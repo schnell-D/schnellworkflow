@@ -5,15 +5,13 @@ import {
   Clock,
   AlertCircle,
   TrendingUp,
-  AlertTriangle,
   ArrowUpRight,
   Calculator,
-  ChevronRight,
   Receipt,
   History,
-  FileText,
   Eye,
   EyeOff,
+  X,
 } from 'lucide-react';
 import { ActivityEntry, BookJob, BookLog, KeuanganSubTab, PaketType } from '../types';
 import {
@@ -21,6 +19,8 @@ import {
   computeMonthlyIncome,
 } from '../utils/analytics';
 import { formatRupiah, formatRupiahShort, formatDateIndo } from '../utils/formatters';
+import { getTodayIsoDate } from '../utils/bookHelpers';
+import { isBookCompletedStatus } from '../utils/invoiceHistoryHelpers';
 import {
   getUserPackageRates,
   setUserPackageRates,
@@ -37,6 +37,10 @@ interface KeuanganTabProps {
   activeSubTab?: KeuanganSubTab;
   onSubTabChange?: (subTab: KeuanganSubTab) => void;
   onSelectInvoiceBookId?: (bookId: number) => void;
+  onUpdateBook?: (book: BookJob, updates: Partial<BookJob>) => Promise<boolean>;
+  onUpdateBooksBatch?: (
+    items: Array<{ book: BookJob; updates: Partial<BookJob> }>
+  ) => Promise<boolean>;
   currentUid?: string;
   hideNominals?: boolean;
   onToggleHideNominals?: () => void;
@@ -49,6 +53,8 @@ interface KeuanganRingkasanProps {
   books: BookJob[];
   onSelectBook: (book: BookJob) => void;
   onGoToInvoice: (bookId: number) => void;
+  onUpdateBook?: (book: BookJob, updates: Partial<BookJob>) => Promise<boolean>;
+  statusSelesai?: string;
   currentUid?: string;
   hideNominals?: boolean;
 }
@@ -57,12 +63,17 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
   books,
   onSelectBook,
   onGoToInvoice,
+  onUpdateBook,
+  statusSelesai,
   currentUid = '',
   hideNominals = true,
 }) => {
   const displayRupiah = (amount: number) => (hideNominals ? 'Rp •••••' : formatRupiah(amount));
   const displayRupiahShort = (amount: number) =>
     hideNominals ? 'Rp •••••' : formatRupiahShort(amount);
+  const [payingBook, setPayingBook] = useState<BookJob | null>(null);
+  const [payingDate, setPayingDate] = useState<string>(() => getTodayIsoDate());
+  const [isSavingPaid, setIsSavingPaid] = useState(false);
   // Pengaturan Tarif Paket Layout per Halaman (tersimpan di userStorage per akun)
   const [packageRates, setPackageRates] = useState<PackageRates>(() => {
     return getUserPackageRates(currentUid);
@@ -118,6 +129,32 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
 
   // Daftar Belum Ditagih, diurutkan nilai jasa terbesar
   const unInvoicedList = [...belumDitagihBooks].sort((a, b) => b.nilaiJasa - a.nilaiJasa);
+
+  // Daftar Buku Sudah Dibayar (Lunas), diurutkan tanggal bayar terbaru
+  const paidBooksList = [...lunasBooks].sort((a, b) => {
+    const dateDiff = (b.tglDibayar || '').localeCompare(a.tglDibayar || '');
+    if (dateDiff !== 0) return dateDiff;
+    return b.no - a.no;
+  });
+
+  const handleOpenMarkPaid = (book: BookJob) => {
+    setPayingBook(book);
+    setPayingDate(book.tglDibayar || getTodayIsoDate());
+  };
+
+  const handleConfirmMarkPaid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payingBook || !onUpdateBook || isSavingPaid) return;
+    setIsSavingPaid(true);
+    const ok = await onUpdateBook(payingBook, {
+      statusBayar: 'Lunas',
+      tglDibayar: payingDate || getTodayIsoDate(),
+    });
+    setIsSavingPaid(false);
+    if (ok) {
+      setPayingBook(null);
+    }
+  };
 
 
   return (
@@ -390,19 +427,35 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                         </p>
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums block">
-                          {displayRupiah(book.nilaiJasa)}
-                        </span>
-                        <span
-                          className={`text-[11px] font-semibold tabular-nums ${
-                            isLate
-                              ? 'text-rose-600 dark:text-rose-400 font-bold'
-                              : 'text-amber-600 dark:text-amber-400'
-                          }`}
-                        >
-                          {book.umurPiutang} hari
-                        </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums block">
+                            {displayRupiah(book.nilaiJasa)}
+                          </span>
+                          <span
+                            className={`text-[11px] font-semibold tabular-nums ${
+                              isLate
+                                ? 'text-rose-600 dark:text-rose-400 font-bold'
+                                : 'text-amber-600 dark:text-amber-400'
+                            }`}
+                          >
+                            {book.umurPiutang} hari
+                          </span>
+                        </div>
+
+                        {onUpdateBook && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenMarkPaid(book);
+                            }}
+                            className="px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition-colors"
+                            title="Tandai tagihan buku ini sudah dibayar (Lunas)"
+                          >
+                            Sudah Bayar
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -411,7 +464,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             )}
           </div>
           <p className="text-[10px] text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
-            *Merah menandakan piutang melewati toleransi 30 hari kalender.
+            *Merah menandakan piutang melewati toleransi 30 hari kalender. Klik &apos;Sudah Bayar&apos; saat client melunasi.
           </p>
         </div>
 
@@ -439,7 +492,7 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[360px] overflow-y-auto pr-1">
               {unInvoicedList.map((book, idx) => {
-                const isReady = book.statusProgres === 'Selesai';
+                const isReady = isBookCompletedStatus(book.statusProgres, statusSelesai);
                 return (
                   <div
                     key={`uninvoiced-${book.no}-${idx}`}
@@ -464,13 +517,13 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <div className="text-right">
                         <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums block">
                           {displayRupiah(book.nilaiJasa)}
                         </span>
                         <span className="text-[10px] text-slate-400 block">
-                          {book.halamanFinal} hlm
+                          {book.halamanFinal || book.halamanAwal} hlm
                         </span>
                       </div>
 
@@ -484,6 +537,16 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
                           Faktur
                         </button>
                       )}
+                      {onUpdateBook && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMarkPaid(book)}
+                          className="px-2 py-1 text-[11px] font-bold rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition-colors"
+                          title="Tandai langsung Lunas jika client sudah membayar"
+                        >
+                          Lunas
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -491,10 +554,147 @@ const KeuanganRingkasanView: React.FC<KeuanganRingkasanProps> = ({
             </div>
           </div>
           <p className="text-[10px] text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
-            Klik tombol &apos;Faktur&apos; untuk langsung membuka pembuatan invoice pada naskah yang selesai.
+            Klik &apos;Faktur&apos; untuk membuat invoice, atau &apos;Lunas&apos; jika client sudah langsung membayar.
           </p>
         </div>
       </div>
+
+      {/* 4b. Bagian Baru: Buku Sudah Dibayar (Lunas) */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-[#1A9E7A] flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                Buku Sudah Dibayar (Lunas)
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Urut tanggal pembayaran terbaru ({paidBooksList.length} buku)
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-extrabold text-[#1A9E7A] dark:text-emerald-400 tabular-nums">
+            Total Lunas: {displayRupiah(lunasNominal)}
+          </span>
+        </div>
+
+        {paidBooksList.length === 0 ? (
+          <p className="text-xs text-slate-400 py-5 text-center">
+            Belum ada buku yang ditandai Lunas.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[360px] overflow-y-auto pr-1">
+            {paidBooksList.map((book, idx) => (
+              <div
+                key={`paid-${book.id || book.no}-${idx}`}
+                onClick={() => onSelectBook(book)}
+                className="py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 p-2 rounded-xl transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-mono font-bold text-slate-400 tabular-nums">
+                      #{book.no}
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {book.judul}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 text-[10px] font-bold shrink-0">
+                      Lunas
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    {book.penulis}
+                    {book.noInvoice ? ` · Inv: ${book.noInvoice}` : ''}
+                    {' · '}
+                    Tgl Bayar: {book.tglDibayar ? formatDateIndo(book.tglDibayar) : '-'}
+                  </p>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-extrabold text-[#1A9E7A] dark:text-emerald-400 tabular-nums block">
+                    {displayRupiah(book.nilaiJasa)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    Paket {book.paket}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Konfirmasi Tanggal Bayar Saat Menandai Buku Lunas */}
+      {payingBook && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          onClick={() => !isSavingPaid && setPayingBook(null)}
+        >
+          <form
+            onSubmit={handleConfirmMarkPaid}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                  Konfirmasi Pembayaran Client
+                </span>
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate mt-0.5">
+                  #{payingBook.no} {payingBook.judul}
+                </h4>
+              </div>
+              <button
+                type="button"
+                disabled={isSavingPaid}
+                onClick={() => setPayingBook(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label
+                htmlFor="ringkasan-tgl-bayar"
+                className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+              >
+                Tanggal Pembayaran Diterima
+              </label>
+              <input
+                id="ringkasan-tgl-bayar"
+                type="date"
+                required
+                value={payingDate}
+                onChange={(e) => setPayingDate(e.target.value)}
+                className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isSavingPaid}
+                onClick={() => setPayingBook(null)}
+                className="min-h-[40px] px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingPaid}
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold inline-flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isSavingPaid ? 'Menyimpan...' : 'Tandai Lunas'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* 5. Kartu Estimasi Biaya Layout Buku & Pengaturan Harga Paket */}
       <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white shadow-xl space-y-6 border border-slate-800">
@@ -830,6 +1030,8 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   activeSubTab = 'ringkasan',
   onSubTabChange,
   onSelectInvoiceBookId,
+  onUpdateBook,
+  onUpdateBooksBatch,
   currentUid,
   hideNominals: hideNominalsProp,
   onToggleHideNominals,
@@ -841,6 +1043,10 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
   const [internalInvoiceBookId, setInternalInvoiceBookId] = useState<number | null>(
     selectedInvoiceBookId || null
   );
+  const [selectedBookTrigger, setSelectedBookTrigger] = useState<{
+    bookNo: number;
+    nonce: number;
+  } | null>(null);
   // Default tersembunyi bila tidak dikontrol dari App (pilihan terakhir tidak disimpan)
   const [localHideNominals, setLocalHideNominals] = useState<boolean>(true);
   const hideNominals = hideNominalsProp ?? localHideNominals;
@@ -866,6 +1072,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
 
   const handleGoToInvoiceForBook = (bookId: number) => {
     setInternalInvoiceBookId(bookId);
+    setSelectedBookTrigger({ bookNo: bookId, nonce: Date.now() });
     onSelectInvoiceBookId?.(bookId);
     handleSubTabChange('invoice');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -975,6 +1182,8 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
           books={books}
           onSelectBook={onSelectBook}
           onGoToInvoice={handleGoToInvoiceForBook}
+          onUpdateBook={onUpdateBook}
+          statusSelesai={statusSelesai}
           currentUid={currentUid}
           hideNominals={hideNominals}
         />
@@ -984,6 +1193,10 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
         <InvoiceTab
           books={books}
           selectedBookId={internalInvoiceBookId}
+          selectedBookTrigger={selectedBookTrigger}
+          onConsumeSelectedBookTrigger={() => setSelectedBookTrigger(null)}
+          currentUid={currentUid}
+          onUpdateBooksBatch={onUpdateBooksBatch}
           activity={activity}
           logs={logs}
           statusSelesai={statusSelesai}
@@ -995,6 +1208,7 @@ export const KeuanganTab: React.FC<KeuanganTabProps> = ({
           books={books}
           onSelectBook={onSelectBook}
           onGoToInvoiceTab={handleGoToInvoiceForBook}
+          onUpdateBooksBatch={onUpdateBooksBatch}
           hideNominals={hideNominals}
           activity={activity}
           logs={logs}

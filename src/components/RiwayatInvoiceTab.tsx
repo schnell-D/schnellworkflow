@@ -286,7 +286,7 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
 
     return (
       <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <div className="print-avoid-break-after flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
             {title} ({groups.length})
           </h3>
@@ -335,91 +335,89 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody>
-                  {groups.map((group, groupIdx) => {
-                    const rowCount = group.books.length;
-                    const groupBg =
-                      groupIdx % 2 === 1
-                        ? 'bg-slate-50/70 dark:bg-slate-800/30'
-                        : 'bg-white dark:bg-slate-900';
+                {groups.map((group, groupIdx) => {
+                  const rowCount = group.books.length;
+                  const groupBg =
+                    groupIdx % 2 === 1
+                      ? 'bg-slate-50/70 dark:bg-slate-800/30'
+                      : 'bg-white dark:bg-slate-900';
 
-                    return (
-                      <React.Fragment key={group.groupKey}>
-                        {group.books.map((book, bookIdx) => {
-                          const hlm = book.halamanFinal || book.halamanAwal || 0;
-                          return (
-                            <tr
-                              key={`${group.groupKey}-${book.id || book.no}-${bookIdx}`}
-                              className={`${groupBg} align-top`}
-                            >
-                              {bookIdx === 0 && (
-                                <>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 text-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 align-top"
-                                  >
-                                    {groupIdx + 1}
-                                  </td>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
-                                  >
-                                    {group.invoiceNo}
-                                  </td>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 text-center text-slate-600 dark:text-slate-300 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
-                                  >
-                                    {formatDateIndo(group.tglInvoice)}
-                                  </td>
-                                </>
-                              )}
+                  return (
+                    <tbody key={group.groupKey} className="print-avoid-break">
+                      {group.books.map((book, bookIdx) => {
+                        const hlm = book.halamanFinal || book.halamanAwal || 0;
+                        return (
+                          <tr
+                            key={`${group.groupKey}-${book.id || book.no}-${bookIdx}`}
+                            className={`${groupBg} align-top print-avoid-break`}
+                          >
+                            {bookIdx === 0 && (
+                              <>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 text-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  {groupIdx + 1}
+                                </td>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  {group.invoiceNo}
+                                </td>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 text-center text-slate-600 dark:text-slate-300 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  {formatDateIndo(group.tglInvoice)}
+                                </td>
+                              </>
+                            )}
 
-                              <td className="py-2.5 px-2.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-normal break-words border border-slate-200 dark:border-slate-700">
-                                {book.judul}
-                              </td>
+                            <td className="py-2.5 px-2.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-normal break-words border border-slate-200 dark:border-slate-700">
+                              {book.judul}
+                            </td>
 
-                              <td className="py-2.5 px-2.5 text-slate-600 dark:text-slate-300 whitespace-normal break-words border border-slate-200 dark:border-slate-700">
-                                {book.penulis}
-                              </td>
+                            <td className="py-2.5 px-2.5 text-slate-600 dark:text-slate-300 whitespace-normal break-words border border-slate-200 dark:border-slate-700">
+                              {book.penulis}
+                            </td>
 
-                              <td className="py-2.5 px-2 text-center text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap border border-slate-200 dark:border-slate-700">
-                                {hlm}
-                              </td>
+                            <td className="py-2.5 px-2 text-center text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap border border-slate-200 dark:border-slate-700">
+                              {hlm}
+                            </td>
 
-                              {bookIdx === 0 && (
-                                <>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 text-right font-extrabold text-slate-900 dark:text-white tabular-nums whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                            {bookIdx === 0 && (
+                              <>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 text-right font-extrabold text-slate-900 dark:text-white tabular-nums whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  {renderNominal(group.totalTagihan)}
+                                </td>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 text-center whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  <span
+                                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${statusBadgeClass}`}
                                   >
-                                    {renderNominal(group.totalTagihan)}
-                                  </td>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 text-center whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
-                                  >
-                                    <span
-                                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${statusBadgeClass}`}
-                                    >
-                                      {group.status}
-                                    </span>
-                                  </td>
-                                  <td
-                                    rowSpan={rowCount}
-                                    className="py-2.5 px-2.5 text-center text-slate-600 dark:text-slate-300 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
-                                  >
-                                    {formatDateIndo(group.tglDibayar)}
-                                  </td>
-                                </>
-                              )}
-                            </tr>
-                          );
-                        })}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
+                                    {group.status}
+                                  </span>
+                                </td>
+                                <td
+                                  rowSpan={rowCount}
+                                  className="py-2.5 px-2.5 text-center text-slate-600 dark:text-slate-300 whitespace-nowrap border border-slate-200 dark:border-slate-700 align-top"
+                                >
+                                  {formatDateIndo(group.tglDibayar)}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  );
+                })}
               </table>
             </div>
 
@@ -710,7 +708,7 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
         {/* Bagian 1: Belum Ditagih (daftar sederhana, urut tgl selesai terlama ke terbaru) */}
         {showBelumDitagihSection && (
           <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+            <div className="print-avoid-break-after flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
               <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
                 Belum Ditagih ({periodAndSearchFiltered.belumDitagih.length})
               </h3>
@@ -751,11 +749,11 @@ export const RiwayatInvoiceTab: React.FC<RiwayatInvoiceTabProps> = ({
                       {periodAndSearchFiltered.belumDitagih.map((book, idx) => (
                         <tr
                           key={`unbilled-${book.id || book.no}-${idx}`}
-                          className={
+                          className={`print-avoid-break ${
                             idx % 2 === 1
                               ? 'bg-slate-50/70 dark:bg-slate-800/30'
                               : 'bg-white dark:bg-slate-900'
-                          }
+                          }`}
                         >
                           <td className="py-2.5 px-2.5 text-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 align-top">
                             {idx + 1}

@@ -216,3 +216,40 @@ export function applyCloudUserData(uid: string, data: SyncedUserData): void {
     setUserItem(uid, 'schnell_buku_view_mode', data.bukuViewMode);
   }
 }
+
+export interface PersistedInvoiceExtraFee {
+  id: string;
+  keterangan: string;
+  nominal: number;
+}
+
+export interface PersistedInvoiceDraft {
+  selectedBookIds: number[];
+  taskTypes: Record<number, 'Layout' | 'Desain'>;
+  customInvoiceNo: string;
+  invoiceDate: string;
+  dueDateDays: number;
+  recipientName: string;
+  recipientAddress: string;
+  defaultTask: 'Layout' | 'Desain';
+  bookExtras: Record<number, PersistedInvoiceExtraFee[]>;
+  expandedExtras: Record<number, boolean>;
+  bookFilterStatus: 'semua' | 'siapTagih' | 'terpilih';
+  bookSearchQuery: string;
+}
+
+export function getUserInvoiceDraft(uid: string): PersistedInvoiceDraft | null {
+  if (!uid) return null;
+  return getUserItem<PersistedInvoiceDraft | null>(uid, 'schnell_invoice_draft', null);
+}
+
+export function setUserInvoiceDraft(uid: string, draft: PersistedInvoiceDraft): void {
+  if (!uid) return;
+  setUserItem<PersistedInvoiceDraft>(uid, 'schnell_invoice_draft', draft);
+}
+
+export function clearUserInvoiceDraft(uid: string): void {
+  if (!uid) return;
+  safeRemoveStorage(`u:${uid}:schnell_invoice_draft`);
+}
+

@@ -102,4 +102,31 @@
   .print-hide {
     display: none !important;
   }
+
+  /* Header tabel berulang tiap halaman, total/footer tabel tidak berulang tiap halaman */
+  .printable-report thead {
+    display: table-header-group;
+  }
+
+  .printable-report tfoot {
+    display: table-row-group;
+  }
+
+  /* Hindari baris buku dan blok total/terbilang terpotong antar halaman */
+  .printable-report tr,
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-avoid-break-after {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
 }
+
+.print-avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+

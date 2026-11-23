@@ -324,6 +324,45 @@ export function normalizeStatusBayar(raw: unknown): StatusBayarType {
   return 'Belum Ditagih';
 }
 
+function parsePageCountValue(rawVal: unknown): number | null {
+  if (rawVal === null || rawVal === undefined || rawVal === '') return null;
+  if (typeof rawVal === 'number') {
+    return Number.isFinite(rawVal) && rawVal >= 0 ? Math.round(rawVal) : null;
+  }
+  const str = String(rawVal).trim();
+  if (!str || str === '-') return null;
+  const cleaned = str.replace(/hlm\.?|hal\.?|halaman|pages?/gi, '').replace(/[^0-9]/g, '');
+  if (!cleaned) return null;
+  const parsed = parseInt(cleaned, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function extractTargetHalamanFromCustomFields(
+  customFields?: Record<string, string | number | null>
+): number | null {
+  if (!customFields || typeof customFields !== 'object') return null;
+  const targetKeys = new Set([
+    'targethalaman',
+    'targethal',
+    'targethlm',
+    'targethalamannaskah',
+    'targetjumlahhalaman',
+    'halamantarget',
+    'estimasihalaman',
+    'halamanestimasi',
+    'halamanawal',
+    'halawal',
+  ]);
+  for (const [key, val] of Object.entries(customFields)) {
+    const normKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (targetKeys.has(normKey)) {
+      const parsed = parsePageCountValue(val);
+      if (parsed !== null && parsed > 0) return parsed;
+    }
+  }
+  return null;
+}
+
 /**
  * Menghitung 3 kolom turunan (hariBerjalan, umurPiutang, lamaLayoutAwal) secara dinamis
  * saat membaca data dari Firestore atau tampilan, tanpa menyimpannya ke Firestore.
@@ -332,6 +371,7 @@ export function computeDerivedBookFields(
   raw: Partial<BookJob> & { id?: string }
 ): BookJob {
   const todayIso = getTodayIsoDate();
+  const rawObj = raw as Record<string, unknown>;
 
   const no = toFiniteNumber(raw.no, 0);
   const judul = String(raw.judul ?? '').trim() || 'Tanpa Judul';
@@ -344,7 +384,23 @@ export function computeDerivedBookFields(
   const tglSelesaiLayout = normalizeIsoDate(raw.tglSelesaiLayout).value;
   const updateTerakhir = normalizeIsoDate(raw.updateTerakhir).value;
 
-  const halamanAwal = toFiniteNumber(raw.halamanAwal, 0);
+  const rawHalAwal = parsePageCountValue(raw.halamanAwal);
+  const rawTargetAlias = parsePageCountValue(
+    rawObj.targetHalaman ?? rawObj.target_halaman ?? rawObj.targetHal
+  );
+  const rawCustomTarget = extractTargetHalamanFromCustomFields(raw.customFields);
+  const rawEstimasi = parsePageCountValue(raw.estimasiHalaman);
+
+  const halamanAwal =
+    rawHalAwal !== null && rawHalAwal > 0
+      ? rawHalAwal
+      : rawCustomTarget !== null && rawCustomTarget > 0
+      ? rawCustomTarget
+      : rawTargetAlias !== null && rawTargetAlias > 0
+      ? rawTargetAlias
+      : rawEstimasi !== null && rawEstimasi > 0
+      ? rawEstimasi
+      : 0;
   const halamanFinal = toFiniteNumber(raw.halamanFinal, halamanAwal);
   const stuck: 'Ya' | 'Tidak' = raw.stuck === 'Ya' ? 'Ya' : 'Tidak';
   const nilaiJasa = toFiniteNumber(raw.nilaiJasa, 0);
@@ -411,7 +467,10 @@ export function computeDerivedBookFields(
   }
   if (raw.halamanWarna) book.halamanWarna = raw.halamanWarna as HalamanWarnaType;
   if (raw.estimasiHalaman !== undefined && raw.estimasiHalaman !== null) {
-    book.estimasiHalaman = toFiniteNumber(raw.estimasiHalaman, halamanAwal);
+    const parsedEst = toFiniteNumber(raw.estimasiHalaman, halamanAwal);
+    book.estimasiHalaman = parsedEst > 0 ? parsedEst : halamanAwal;
+  } else if (halamanAwal > 0) {
+    book.estimasiHalaman = halamanAwal;
   }
   if (raw.kodeProduksi) book.kodeProduksi = String(raw.kodeProduksi);
   if (raw.isbn) book.isbn = String(raw.isbn);
@@ -438,7 +497,6 @@ export function computeDerivedBookFields(
     book.importId = String(raw.importId);
   }
 
-  const rawObj = raw as Record<string, unknown>;
   const rawTglSelesai =
     rawObj.tglSelesai ??
     rawObj.tanggalSelesai ??
@@ -500,6 +558,9 @@ export function serializeBookForFirestore(book: Partial<BookJob>): Record<string
 
   if (book.tglSelesai !== undefined) {
     payload.tglSelesai = normalizeIsoDate(book.tglSelesai).value;
+  }
+  if (book.noInvoice !== undefined) {
+    payload.noInvoice = book.noInvoice ? String(book.noInvoice).trim() : null;
   }
 
   if (book.ukuran !== undefined || book.ukuranBuku !== undefined) {
@@ -593,6 +654,9 @@ export function sanitizeBookUpdatesForFirestore(updates: Partial<BookJob>): Reco
   if ('stuck' in updates) payload.stuck = updates.stuck === 'Ya' ? 'Ya' : 'Tidak';
   if ('nilaiJasa' in updates) payload.nilaiJasa = toFiniteNumber(updates.nilaiJasa, 0);
   if ('statusBayar' in updates) payload.statusBayar = normalizeStatusBayar(updates.statusBayar);
+  if ('noInvoice' in updates) {
+    payload.noInvoice = updates.noInvoice ? String(updates.noInvoice).trim() : null;
+  }
   if ('tglInvoice' in updates) payload.tglInvoice = normalizeIsoDate(updates.tglInvoice).value;
   if ('tglDibayar' in updates) payload.tglDibayar = normalizeIsoDate(updates.tglDibayar).value;
   if ('catatanBelumSelesai' in updates) payload.catatanBelumSelesai = String(updates.catatanBelumSelesai ?? '');

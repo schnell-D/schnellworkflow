@@ -20,6 +20,7 @@ import {
   StickyNote,
   Zap,
   HelpCircle,
+  Wallet,
 } from 'lucide-react';
 import {
   ActivityEntry,
@@ -28,6 +29,7 @@ import {
   LogJenisType,
   LogStatusType,
   StatusProgresType,
+  StatusBayarType,
   StatusIsbnType,
   HalamanWarnaType,
   PaketType,
@@ -35,6 +37,7 @@ import {
 import {
   formatDateIndo,
   formatLogDateShort,
+  formatRupiah,
   getStatusProgresConfig,
 } from '../utils/formatters';
 import {
@@ -173,6 +176,9 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     book?.statusProgres || 'Di Saya'
   );
   const [draftPaket, setDraftPaket] = useState<PaketType>(book?.paket || 'Standart');
+  const [draftHalamanAwal, setDraftHalamanAwal] = useState<number>(
+    book ? book.halamanAwal : 0
+  );
   const [draftHalamanFinal, setDraftHalamanFinal] = useState<number>(
     book ? book.halamanFinal || book.halamanAwal : 0
   );
@@ -200,6 +206,18 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     Boolean(book?.adaPertanyaan)
   );
 
+  // Draft Pembayaran & Invoice
+  const [draftNilaiJasa, setDraftNilaiJasa] = useState<string>(
+    book ? String(book.nilaiJasa || 0) : '0'
+  );
+  const [draftStatusBayar, setDraftStatusBayar] = useState<StatusBayarType>(
+    book?.statusBayar || 'Belum Ditagih'
+  );
+  const [draftNoInvoice, setDraftNoInvoice] = useState<string>(book?.noInvoice || '');
+  const [draftTglInvoice, setDraftTglInvoice] = useState<string>(book?.tglInvoice || '');
+  const [draftTglDibayar, setDraftTglDibayar] = useState<string>(book?.tglDibayar || '');
+  const [isSavingPayment, setIsSavingPayment] = useState<boolean>(false);
+
   // Catatan Buku (catatan tetap per buku, tersimpan langsung saat blur/Simpan)
   const [draftCatatanBuku, setDraftCatatanBuku] = useState<string>(book?.catatanBuku || '');
   const [isEditingCatatanBuku, setIsEditingCatatanBuku] = useState<boolean>(false);
@@ -223,6 +241,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
   const [isEditingProduction, setIsEditingProduction] = useState(false);
   const [isEditingHalaman, setIsEditingHalaman] = useState(false);
   const [halamanInput, setHalamanInput] = useState<string>(String(draftHalamanFinal));
+  const [halamanAwalInput, setHalamanAwalInput] = useState<string>(String(draftHalamanAwal));
 
   // State Tab Catatan baru (Firestore users/{uid}/logs)
   const [quickLogInput, setQuickLogInput] = useState<string>('');
@@ -299,7 +318,10 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       setDraftPenulis(book.penulis);
       setDraftStatusProgres(book.statusProgres);
       setDraftPaket(book.paket);
-      const hal = book.halamanFinal || book.halamanAwal;
+      const halAwal = book.halamanAwal || 0;
+      const hal = book.halamanFinal || halAwal;
+      setDraftHalamanAwal(halAwal);
+      setHalamanAwalInput(String(halAwal));
       setDraftHalamanFinal(hal);
       setHalamanInput(String(hal));
       setDraftTglTerima(book.tglTerima || '');
@@ -316,6 +338,12 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       setDraftCatatanLain(book.catatanLain || '');
       setDraftKelengkapan(normalizeCheckedItems(book.kelengkapanNaskah));
       setDraftAdaPertanyaan(Boolean(book.adaPertanyaan));
+
+      setDraftNilaiJasa(String(book.nilaiJasa || 0));
+      setDraftStatusBayar(book.statusBayar || 'Belum Ditagih');
+      setDraftNoInvoice(book.noInvoice || '');
+      setDraftTglInvoice(book.tglInvoice || '');
+      setDraftTglDibayar(book.tglDibayar || '');
 
       setDraftCatatanBuku(book.catatanBuku || '');
       setIsEditingCatatanBuku(false);
@@ -350,11 +378,19 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     }
   }, [book, currentUid]);
 
-  // Sinkronkan status progres, kelengkapan, adaPertanyaan & catatanBuku saat berubah via Undo toast atau Firestore
+  // Sinkronkan status progres, kelengkapan, adaPertanyaan, catatanBuku & statusBayar saat berubah via Firestore
   useEffect(() => {
     if (!book) return;
     setDraftStatusProgres(book.statusProgres);
   }, [book?.statusProgres]);
+
+  useEffect(() => {
+    if (!book) return;
+    setDraftStatusBayar(book.statusBayar || 'Belum Ditagih');
+    setDraftTglDibayar(book.tglDibayar || '');
+    setDraftTglInvoice(book.tglInvoice || '');
+    setDraftNoInvoice(book.noInvoice || '');
+  }, [book?.statusBayar, book?.tglDibayar, book?.tglInvoice, book?.noInvoice]);
 
   useEffect(() => {
     if (!book) return;
@@ -375,6 +411,10 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     setHalamanInput(String(draftHalamanFinal));
   }, [draftHalamanFinal]);
 
+  useEffect(() => {
+    setHalamanAwalInput(String(draftHalamanAwal));
+  }, [draftHalamanAwal]);
+
   // Konsistensi Kelengkapan Naskah: selalu dihitung dari 10 item pokok
   const checkedKelengkapanCount = useMemo(
     () => KELENGKAPAN_NASKAH_LIST.filter((item) => draftKelengkapan.includes(item)).length,
@@ -386,11 +426,13 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
   const hasChanges = useMemo(() => {
     if (!book) return false;
     const baselineUkuran = book.ukuran || book.ukuranBuku || UKURAN_BUKU_LIST[0];
+    const parsedNilaiJasa = parseInt(draftNilaiJasa.replace(/[^0-9]/g, ''), 10) || 0;
 
     return (
       draftJudul.trim() !== book.judul.trim() ||
       draftPenulis.trim() !== book.penulis.trim() ||
       draftPaket !== book.paket ||
+      draftHalamanAwal !== (book.halamanAwal || 0) ||
       draftHalamanFinal !== (book.halamanFinal || book.halamanAwal) ||
       (draftTglTerima || '') !== (book.tglTerima || '') ||
       draftKodeProduksi.trim() !==
@@ -401,6 +443,11 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       draftHalamanWarna !== (book.halamanWarna || 'BW') ||
       draftCatatanBiaya.trim() !== (book.catatanBiaya || '').trim() ||
       draftCatatanLain.trim() !== (book.catatanLain || '').trim() ||
+      parsedNilaiJasa !== (book.nilaiJasa || 0) ||
+      draftStatusBayar !== (book.statusBayar || 'Belum Ditagih') ||
+      draftNoInvoice.trim() !== (book.noInvoice || '').trim() ||
+      (draftTglInvoice || '') !== (book.tglInvoice || '') ||
+      (draftTglDibayar || '') !== (book.tglDibayar || '') ||
       draftDummyStatus !== savedDummyBaseline
     );
   }, [
@@ -408,6 +455,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     draftJudul,
     draftPenulis,
     draftPaket,
+    draftHalamanAwal,
     draftHalamanFinal,
     draftTglTerima,
     draftKodeProduksi,
@@ -417,6 +465,11 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     draftHalamanWarna,
     draftCatatanBiaya,
     draftCatatanLain,
+    draftNilaiJasa,
+    draftStatusBayar,
+    draftNoInvoice,
+    draftTglInvoice,
+    draftTglDibayar,
     draftDummyStatus,
     savedDummyBaseline,
   ]);
@@ -689,10 +742,44 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
 
   const handleApplyHalaman = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const parsed = parseInt(halamanInput, 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      setDraftHalamanFinal(parsed);
+    const parsedFinal = parseInt(halamanInput, 10);
+    const parsedAwal = parseInt(halamanAwalInput, 10);
+    if (!isNaN(parsedFinal) && parsedFinal > 0) {
+      setDraftHalamanFinal(parsedFinal);
+    }
+    if (!isNaN(parsedAwal) && parsedAwal >= 0) {
+      setDraftHalamanAwal(parsedAwal);
+    }
+    if ((!isNaN(parsedFinal) && parsedFinal > 0) || (!isNaN(parsedAwal) && parsedAwal >= 0)) {
       setIsEditingHalaman(false);
+    }
+  };
+
+  const handleMarkBookPaid = async () => {
+    if (!book || isSavingPayment) return;
+    const paidDate = draftTglDibayar.trim() || getTodayIsoDate();
+    const parsedNilaiJasa = parseInt(draftNilaiJasa.replace(/[^0-9]/g, ''), 10) || 0;
+    setIsSavingPayment(true);
+    setSaveState('saving');
+    setSaveErrorText(null);
+
+    const updates: Partial<BookJob> = {
+      statusBayar: 'Lunas',
+      tglDibayar: paidDate,
+      nilaiJasa: parsedNilaiJasa,
+      noInvoice: draftNoInvoice.trim() || null,
+      tglInvoice: draftTglInvoice.trim() || null,
+    };
+
+    const ok = await onUpdateBook(book, updates);
+    setIsSavingPayment(false);
+    if (ok) {
+      setDraftStatusBayar('Lunas');
+      setDraftTglDibayar(paidDate);
+      setSaveState('saved');
+    } else {
+      setSaveState('error');
+      setSaveErrorText('Gagal menyimpan status pembayaran ke Firestore. Silakan coba lagi.');
     }
   };
 
@@ -764,12 +851,15 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
 
     const resolvedUkuran =
       draftUkuranBuku.trim() || book.ukuran || book.ukuranBuku || UKURAN_BUKU_LIST[0];
+    const parsedNilaiJasa = parseInt(draftNilaiJasa.replace(/[^0-9]/g, ''), 10) || 0;
 
     const updates: Partial<BookJob> = {
       judul: draftJudul.trim() || book.judul,
       penulis: draftPenulis.trim() || book.penulis,
       statusProgres: draftStatusProgres,
       paket: draftPaket,
+      halamanAwal: draftHalamanAwal,
+      estimasiHalaman: draftHalamanAwal,
       halamanFinal: draftHalamanFinal,
       tglTerima: draftTglTerima.trim() || null,
       kodeProduksi: draftKodeProduksi.trim() || undefined,
@@ -781,6 +871,11 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
       catatanBiaya: draftCatatanBiaya.trim() || null,
       catatanLain: draftCatatanLain.trim() || null,
       kelengkapanNaskah: kelengkapanPayload,
+      nilaiJasa: parsedNilaiJasa,
+      statusBayar: draftStatusBayar,
+      noInvoice: draftNoInvoice.trim() || null,
+      tglInvoice: draftTglInvoice.trim() || null,
+      tglDibayar: draftTglDibayar.trim() || null,
     };
 
     if (statusChanged || hasChanges) {
@@ -904,7 +999,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
     );
   }
 
-  const halamanDiff = draftHalamanFinal - book.halamanAwal;
+  const halamanDiff = draftHalamanFinal - draftHalamanAwal;
 
   return (
     <div className="min-h-[100dvh] bg-[#F2F5FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] overflow-x-clip">
@@ -990,6 +1085,25 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
               >
                 {draftStatusIsbn}
               </span>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTab('produksi')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 border transition-colors ${
+                  draftStatusBayar === 'Lunas'
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                    : draftStatusBayar === 'Belum Dibayar'
+                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                }`}
+                title="Klik untuk kelola pembayaran & invoice di tab Produksi"
+              >
+                {draftStatusBayar === 'Lunas'
+                  ? 'Bayar: Lunas'
+                  : draftStatusBayar === 'Belum Dibayar'
+                  ? 'Bayar: Belum Dibayar'
+                  : 'Bayar: Belum Ditagih'}
+              </button>
 
               {book.stuck === 'Ya' && (
                 <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900 inline-flex items-center gap-1 whitespace-nowrap shrink-0">
@@ -1956,7 +2070,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                       Total Halaman
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Perbandingan jumlah halaman final terhadap estimasi awal naskah.
+                      Perbandingan jumlah halaman final terhadap target/estimasi awal naskah.
                     </p>
                   </div>
 
@@ -1973,44 +2087,78 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                 </div>
 
                 {isEditingHalaman ? (
-                  <form onSubmit={handleApplyHalaman} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const val = Math.max(1, (parseInt(halamanInput, 10) || 1) - 2);
-                          setHalamanInput(String(val));
-                        }}
-                        className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700"
-                        aria-label="Kurangi 2 halaman"
-                      >
-                        -
-                      </button>
+                  <form onSubmit={handleApplyHalaman} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="detail-halaman-final"
+                          className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                        >
+                          Total Halaman Final
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = Math.max(1, (parseInt(halamanInput, 10) || 1) - 2);
+                              setHalamanInput(String(val));
+                            }}
+                            className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700"
+                            aria-label="Kurangi 2 halaman"
+                          >
+                            -
+                          </button>
 
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        value={halamanInput}
-                        onChange={(e) => setHalamanInput(e.target.value)}
-                        className="w-28 min-h-[44px] text-center px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-blue-500 font-extrabold text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums scroll-mb-24"
-                        autoFocus
-                      />
+                          <input
+                            id="detail-halaman-final"
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            value={halamanInput}
+                            onChange={(e) => setHalamanInput(e.target.value)}
+                            className="w-28 min-h-[44px] text-center px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-blue-500 font-extrabold text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums scroll-mb-24"
+                            autoFocus
+                          />
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const val = (parseInt(halamanInput, 10) || 1) + 2;
-                          setHalamanInput(String(val));
-                        }}
-                        className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700"
-                        aria-label="Tambah 2 halaman"
-                      >
-                        +
-                      </button>
-                      <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                        hlm.
-                      </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = (parseInt(halamanInput, 10) || 1) + 2;
+                              setHalamanInput(String(val));
+                            }}
+                            className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700"
+                            aria-label="Tambah 2 halaman"
+                          >
+                            +
+                          </button>
+                          <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                            hlm.
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="detail-estimasi-halaman"
+                          className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                        >
+                          Estimasi / Target Halaman
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="detail-estimasi-halaman"
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            value={halamanAwalInput}
+                            onChange={(e) => setHalamanAwalInput(e.target.value)}
+                            className="w-32 min-h-[44px] text-center px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums scroll-mb-24"
+                          />
+                          <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                            hlm.
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -2025,6 +2173,7 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                         type="button"
                         onClick={() => {
                           setHalamanInput(String(draftHalamanFinal));
+                          setHalamanAwalInput(String(draftHalamanAwal));
                           setIsEditingHalaman(false);
                         }}
                         className="min-h-[44px] px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold"
@@ -2039,25 +2188,165 @@ export const BookDetailPage: React.FC<BookDetailPageProps> = ({
                       {draftHalamanFinal} hlm.
                     </span>
                     <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium tabular-nums">
-                      {halamanDiff !== 0 ? (
-                        <>
-                          <strong
-                            className={
-                              halamanDiff > 0
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-emerald-600 dark:text-emerald-400'
-                            }
-                          >
-                            {halamanDiff > 0 ? `+${halamanDiff}` : halamanDiff}
-                          </strong>{' '}
-                          dari estimasi {book.halamanAwal} hlm.
-                        </>
+                      {draftHalamanAwal > 0 ? (
+                        halamanDiff !== 0 ? (
+                          <>
+                            <strong
+                              className={
+                                halamanDiff > 0
+                                  ? 'text-blue-600 dark:text-blue-400'
+                                  : 'text-emerald-600 dark:text-emerald-400'
+                              }
+                            >
+                              {halamanDiff > 0 ? `+${halamanDiff}` : halamanDiff}
+                            </strong>{' '}
+                            dari estimasi {draftHalamanAwal} hlm.
+                          </>
+                        ) : (
+                          <>Sesuai estimasi {draftHalamanAwal} hlm.</>
+                        )
                       ) : (
-                        <>Sesuai estimasi awal {book.halamanAwal} hlm.</>
+                        <>Estimasi / target halaman belum diisi</>
                       )}
                     </span>
                   </div>
                 )}
+              </section>
+
+              {/* Seksi Pembayaran & Invoice */}
+              <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Pembayaran &amp; Invoice</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Catat nilai jasa, nomor invoice, dan update status saat client sudah membayar.
+                    </p>
+                  </div>
+
+                  {draftStatusBayar !== 'Lunas' && (
+                    <button
+                      type="button"
+                      disabled={isSavingPayment}
+                      onClick={() => {
+                        void handleMarkBookPaid();
+                      }}
+                      className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-xs transition-colors"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isSavingPayment ? 'Menyimpan...' : 'Tandai Sudah Dibayar (Lunas)'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Pilihan Status Bayar (3 status) */}
+                <div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Status Pembayaran
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['Belum Ditagih', 'Belum Dibayar', 'Lunas'] as StatusBayarType[]).map((st) => {
+                      const active = draftStatusBayar === st;
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => {
+                            setDraftStatusBayar(st);
+                            if (st === 'Lunas' && !draftTglDibayar) {
+                              setDraftTglDibayar(getTodayIsoDate());
+                            }
+                          }}
+                          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-colors text-center ${
+                            active
+                              ? st === 'Lunas'
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : st === 'Belum Dibayar'
+                                ? 'bg-amber-500 text-white border-amber-500'
+                                : 'bg-slate-800 text-white border-slate-800 dark:bg-white dark:text-slate-900'
+                              : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          }`}
+                        >
+                          {st}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="detail-nilai-jasa"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                    >
+                      Nilai Jasa (Rp)
+                    </label>
+                    <input
+                      id="detail-nilai-jasa"
+                      type="text"
+                      inputMode="numeric"
+                      value={draftNilaiJasa}
+                      onChange={(e) => setDraftNilaiJasa(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="0"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-bold text-slate-900 dark:text-white tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block tabular-nums">
+                      {formatRupiah(parseInt(draftNilaiJasa.replace(/[^0-9]/g, ''), 10) || 0)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="detail-no-invoice"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                    >
+                      Nomor Invoice
+                    </label>
+                    <input
+                      id="detail-no-invoice"
+                      type="text"
+                      value={draftNoInvoice}
+                      onChange={(e) => setDraftNoInvoice(e.target.value)}
+                      placeholder="Mis. INV-202611-001"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="detail-tgl-invoice"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                    >
+                      Tanggal Invoice
+                    </label>
+                    <input
+                      id="detail-tgl-invoice"
+                      type="date"
+                      value={draftTglInvoice}
+                      onChange={(e) => setDraftTglInvoice(e.target.value)}
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="detail-tgl-dibayar"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
+                    >
+                      Tanggal Dibayar
+                    </label>
+                    <input
+                      id="detail-tgl-dibayar"
+                      type="date"
+                      value={draftTglDibayar}
+                      onChange={(e) => setDraftTglDibayar(e.target.value)}
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </section>
 
               {/* Seksi Layout Awal & Tanggal Terima Naskah */}

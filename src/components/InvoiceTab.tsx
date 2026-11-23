@@ -798,7 +798,7 @@ export const InvoiceTab: React.FC<InvoiceTabProps> = ({
         {/* TABEL RINCIAN INVOICE:
             Kolom: No. - Task - Tgl Selesai - Judul Buku dan Penulis - Paket - Halaman - Nilai Jasa
             Tambahan Biaya Memanjang dari Task sampai Halaman (colSpan={5}, teks kecil) */}
-        <div className="mb-6">
+        <div className="mb-0">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b-2 border-slate-900 bg-slate-100 text-[11px] font-bold text-slate-700">
@@ -821,7 +821,7 @@ export const InvoiceTab: React.FC<InvoiceTabProps> = ({
                 return (
                   <React.Fragment key={book.no}>
                     {/* Baris Utama Buku */}
-                    <tr className="hover:bg-slate-50/50 align-top">
+                    <tr className="hover:bg-slate-50/50 align-top print-avoid-break">
                       <td className="py-3 px-2 text-center font-bold text-slate-600">
                         {idx + 1}
                       </td>
@@ -866,7 +866,7 @@ export const InvoiceTab: React.FC<InvoiceTabProps> = ({
                     {bookExtraList.map((extra) => (
                       <tr
                         key={extra.id}
-                        className="bg-amber-50/70 border-t border-dashed border-amber-200/90 text-slate-700"
+                        className="bg-amber-50/70 border-t border-dashed border-amber-200/90 text-slate-700 print-avoid-break"
                       >
                         <td className="py-1.5 px-2 text-center text-amber-500 font-mono text-[10px]">
                           ↳
@@ -890,32 +890,34 @@ export const InvoiceTab: React.FC<InvoiceTabProps> = ({
                 );
               })}
             </tbody>
-            <tfoot>
-              {/* Total Keseluruhan */}
-              <tr className="border-t-2 border-slate-900 font-black bg-blue-50/70 text-slate-900">
-                <td colSpan={6} className="py-3 px-3 text-right uppercase text-xs text-blue-950 font-black">
-                  TOTAL JUMLAH TAGIHAN:
-                </td>
-                <td className="py-3 px-3 text-right tabular-nums text-base sm:text-lg text-blue-700 font-black whitespace-nowrap">
-                  {formatRupiah(totalTagihan)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
 
-        {/* TERBILANG KALIMAT INDONESIA */}
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-xs">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-            TERBILANG:
-          </span>
-          <p className="font-serif italic font-bold text-slate-800 mt-0.5 text-xs sm:text-sm">
-            # {angkaTerbilang(totalTagihan)} #
-          </p>
+        {/* BLOK TOTAL & TERBILANG (SATU KESATUAN, TIDAK TERPOTONG & TIDAK BERULANG) */}
+        <div className="print-avoid-break mb-6">
+          {/* Total Keseluruhan */}
+          <div className="border-t-2 border-slate-900 font-black bg-blue-50/70 text-slate-900 py-3 px-3 flex items-center justify-end gap-4 sm:gap-6 mb-4">
+            <span className="uppercase text-xs text-blue-950 font-black text-right">
+              TOTAL JUMLAH TAGIHAN:
+            </span>
+            <span className="tabular-nums text-base sm:text-lg text-blue-700 font-black whitespace-nowrap text-right">
+              {formatRupiah(totalTagihan)}
+            </span>
+          </div>
+
+          {/* TERBILANG KALIMAT INDONESIA */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+              TERBILANG:
+            </span>
+            <p className="font-serif italic font-bold text-slate-800 mt-0.5 text-xs sm:text-sm">
+              # {angkaTerbilang(totalTagihan)} #
+            </p>
+          </div>
         </div>
 
         {/* INFORMASI PEMBAYARAN */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 text-xs">
+        <div className="print-avoid-break grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 text-xs">
           {/* Informasi Pembayaran */}
           <div className="space-y-1.5">
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">

@@ -57,7 +57,7 @@ export const MAPPABLE_FIELD_OPTIONS: Array<{ value: MappableBookField; label: st
   { value: 'tglTerima', label: 'Tgl Terima' },
   { value: 'tglSelesaiLayout', label: 'Tgl Selesai Layout' },
   { value: 'updateTerakhir', label: 'Update Terakhir' },
-  { value: 'halamanAwal', label: 'Halaman Awal' },
+  { value: 'halamanAwal', label: 'Estimasi / Target Halaman (Awal)' },
   { value: 'halamanFinal', label: 'Halaman Final' },
   { value: 'stuck', label: 'Stuck (Ya/Tidak)' },
   { value: 'nilaiJasa', label: 'Nilai Jasa' },
@@ -323,7 +323,19 @@ const BOOK_HEADER_MAP_RULES: Array<{ field: MappableBookField; synonyms: string[
   },
   {
     field: 'halamanAwal',
-    synonyms: ['halamanawal', 'halawal', 'estimasihalaman', 'halawalnaskah'],
+    synonyms: [
+      'halamanawal',
+      'halawal',
+      'estimasihalaman',
+      'halamanestimasi',
+      'halawalnaskah',
+      'targethalaman',
+      'targethal',
+      'targethlm',
+      'targethalamannaskah',
+      'targetjumlahhalaman',
+      'halamantarget',
+    ],
   },
   {
     field: 'halamanFinal',
@@ -716,9 +728,12 @@ export function compileBooksFromTab(
           }
           break;
         }
-        case 'halamanAwal':
-          draft.halamanAwal = parseMoneyNumber(cellVal);
+        case 'halamanAwal': {
+          const parsedTarget = parseMoneyNumber(cellVal);
+          draft.halamanAwal = parsedTarget;
+          draft.estimasiHalaman = parsedTarget;
           break;
+        }
         case 'halamanFinal':
           draft.halamanFinal = parseMoneyNumber(cellVal);
           break;
@@ -793,6 +808,7 @@ export function compileBooksFromTab(
         { key: 'penulis', label: 'Penulis' },
         { key: 'statusProgres', label: 'Status Progres' },
         { key: 'paket', label: 'Paket' },
+        { key: 'halamanAwal', label: 'Estimasi / Target Halaman' },
         { key: 'halamanFinal', label: 'Halaman Final' },
         { key: 'nilaiJasa', label: 'Nilai Jasa' },
         { key: 'statusBayar', label: 'Status Bayar' },
@@ -866,6 +882,7 @@ export function mergeImportedBookWithExisting(
     'tglSelesaiLayout',
     'updateTerakhir',
     'halamanAwal',
+    'estimasiHalaman',
     'halamanFinal',
     'nilaiJasa',
     'statusBayar',

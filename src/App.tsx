@@ -532,6 +532,65 @@ export default function App() {
     }
   };
 
+  // Handler update banyak buku sekaligus ke Firestore (mis. tandai satu invoice Lunas / simpan nomor invoice)
+  const handleUpdateBooksBatch = async (
+    items: Array<{ book: BookJob; updates: Partial<BookJob> }>
+  ): Promise<boolean> => {
+    if (!currentUser || items.length === 0) return false;
+
+    const today = getTodayIsoDate();
+    const prepared = items.map(({ book, updates }) => {
+      const statusChanged =
+        updates.statusProgres !== undefined &&
+        updates.statusProgres !== book.statusProgres;
+      const finalUpdates: Partial<BookJob> = { ...updates };
+      if (statusChanged && !finalUpdates.updateTerakhir) {
+        finalUpdates.updateTerakhir = today;
+      }
+      if (
+        statusChanged &&
+        isBookCompletedStatus(finalUpdates.statusProgres, cloudProfileData?.statusSelesai) &&
+        !book.tglSelesai &&
+        !('tglSelesai' in finalUpdates)
+      ) {
+        finalUpdates.tglSelesai = today;
+      }
+      return {
+        book,
+        finalUpdates,
+        optimistic: computeDerivedBookFields({ ...book, ...finalUpdates }),
+      };
+    });
+
+    const previousBooks = books;
+    setBooks((prev) =>
+      prev.map((b) => {
+        const matched = prepared.find((p) =>
+          p.book.id ? p.book.id === b.id : p.book.no === b.no
+        );
+        return matched ? matched.optimistic : b;
+      })
+    );
+    setError(null);
+
+    try {
+      await Promise.all(
+        prepared.map(({ book, finalUpdates }) => {
+          if (!book.id) {
+            throw new Error('ID dokumen buku tidak ditemukan di Firestore.');
+          }
+          return updateUserBook(currentUser.uid, book.id, finalUpdates);
+        })
+      );
+      triggerSavedNotice('Tersimpan');
+      return true;
+    } catch (err) {
+      setBooks(previousBooks);
+      setError(getFirestoreErrorMessage(err));
+      return false;
+    }
+  };
+
   // Handler Ubah Status Satu Ketukan dengan toast "Batalkan" 5 detik
   const handleQuickStatusChange = async (
     targetBook: BookJob,
@@ -1084,6 +1143,8 @@ export default function App() {
               <KeuanganTab
                 books={books}
                 onSelectBook={(b) => openBookDetail(b)}
+                onUpdateBook={handleUpdateBook}
+                onUpdateBooksBatch={handleUpdateBooksBatch}
                 selectedInvoiceBookId={selectedInvoiceBookId}
                 activeSubTab={
                   activeTab === 'invoice'
